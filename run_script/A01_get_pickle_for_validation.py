@@ -28,8 +28,7 @@ random.seed(random_seed)
 np.random.seed(random_seed)
 
 # set validation parameteres
-train_test_days = 1
-#train_test_days = 90
+train_test_days = 90
 n_hold = 10
 topN = [5,10,20]
 
@@ -109,11 +108,11 @@ models = {
         #"itembased": itembased,
         #"coclustering": coclustering,
         #"baseline": baseline,
-        "randommodel": randommodel,
+        #"randommodel": randommodel,
         #"two_way_aspect_Z005": two_way_aspect_Z005,
         #"two_way_aspect_Z010": two_way_aspect_Z010,
         #"two_way_aspect_Z020": two_way_aspect_Z020,
-        #"randomwalk": randomwalk
+        "randomwalk": randomwalk
         }
 
 # --- varidation ---
