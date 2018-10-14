@@ -10,9 +10,9 @@ docker-build:
 docker-run-A01:
 	docker run -d --rm -v $(ROOT_DIR):/docker-work \
 		hoge:latest \
-		python3 run_script/A01_get_pickle_for_validation.py
+		python3 src/A01_get_pickle_for_validation.py
 
 docker-run-A02:
 	docker run -d --rm -v $(ROOT_DIR):/docker-work \
 		hoge:latest \
-		python3 run_script/A02_aggregate_peformances_from_validation_result_pickle.py
+		python3 src/A02_aggregate_peformances_from_validation_result_pickle.py

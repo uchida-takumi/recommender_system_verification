@@ -4,7 +4,7 @@
 グラフ生成する
 """
 import pandas as pd
-from src.module import util
+from module import util
 
 pd.set_option('display.height', 1000)
 pd.set_option('display.max_rows', 50)

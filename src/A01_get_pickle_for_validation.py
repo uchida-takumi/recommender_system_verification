@@ -12,14 +12,14 @@ import os
 import sys
 import random
 
-from src.module import util
+from module import util
 
 # --- models ---
-from src.module.get_CF_varidation_arrays import get_CF_varidation_arrays
-from src.module.Suprise_algo_wrapper import algo_wrapper
-from src.module.two_way_aspect_model import two_way_aspect_model
-from src.module.RandomWalkCF import RandomWalkCF
-from src.module.MF import MF
+from module.get_CF_varidation_arrays import get_CF_varidation_arrays
+from module.Suprise_algo_wrapper import algo_wrapper
+from module.two_way_aspect_model import two_way_aspect_model
+from module.RandomWalkCF import RandomWalkCF
+from module.MF import MF
 
 from surprise import SVD # SVD algorithm
 from surprise import NMF # Non-negative Matrix Factorization
