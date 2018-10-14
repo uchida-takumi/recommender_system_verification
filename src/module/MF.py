@@ -18,7 +18,7 @@ from src import util
 class MF:
 
     def __init__(self, n_latent_factor=100, learning_rate=0.01, 
-                 regularization_weight=0.02, n_epochs=20, 
+                 regularization_weight=0.02, n_epochs=100, 
                  global_bias=True, id_bias=True,
                  verbose=False, random_seed=None):
         """
