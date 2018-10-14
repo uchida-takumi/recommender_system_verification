@@ -92,8 +92,8 @@ def get_CF_varidation_arrays(
         n_random_selected_item_ids = min(n_random_selected_item_ids, len(item_id_set))
         random_selected_item_ids = np.random.choice(list(item_id_set), size=n_random_selected_item_ids, replace=False)
         
-        predicted_random_item_ids = model.predict([user_id]*n_random_selected_item_ids, random_selected_item_ids)
-        predicted_the_item_id = model.predict([user_id], [item_id])
+        predicted_random_item_ids = model.predict([user_id]*n_random_selected_item_ids, random_selected_item_ids, **fit_args)
+        predicted_the_item_id = model.predict([user_id], [item_id], **fit_args)
         
         predicted = np.concatenate([predicted_random_item_ids, predicted_the_item_id])
         item_ids  = np.concatenate([random_selected_item_ids, [item_id]])
@@ -122,7 +122,7 @@ def get_CF_varidation_arrays(
             "test_user_ids": test_user_ids,
             "test_item_ids": test_item_ids,
             "test_values": test_values,
-            "predicted_values": model.predict(test_user_ids, test_item_ids),
+            "predicted_values": model.predict(test_user_ids, test_item_ids, **fit_args),
             "fitted_model": model,
             "test_good_user_ids": test_good_user_ids,
             "test_good_item_ids": test_good_item_ids,

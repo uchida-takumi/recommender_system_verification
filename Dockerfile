@@ -10,5 +10,5 @@ ADD . .
 RUN pip3 install -r requirement.txt
 RUN pip3 install scikit-surprise==1.0.6
 
-# ディスクのマウントポイントを指定する。
+# 処理を記述する
 CMD echo "FINISH"

@@ -4,14 +4,7 @@
 グラフ生成する
 """
 import pandas as pd
-import numpy as np
-import pickle
-import os
-import sys
-import random
-from pprint import pprint
-
-from src import util
+from src.module import util
 
 pd.set_option('display.height', 1000)
 pd.set_option('display.max_rows', 50)

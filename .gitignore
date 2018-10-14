@@ -1,3 +1,5 @@
+doc/
+local_file/
 .DS_store
 *.pickle
 *.csv

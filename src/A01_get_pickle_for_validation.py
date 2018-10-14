@@ -5,7 +5,6 @@
 """
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
-
 import pandas as pd
 import numpy as np
 import pickle
@@ -13,7 +12,23 @@ import os
 import sys
 import random
 
-from src import util
+from src.module import util
+
+# --- models ---
+from src.module.get_CF_varidation_arrays import get_CF_varidation_arrays
+from src.module.Suprise_algo_wrapper import algo_wrapper
+from src.module.two_way_aspect_model import two_way_aspect_model
+from src.module.RandomWalkCF import RandomWalkCF
+from src.module.MF import MF
+
+from surprise import SVD # SVD algorithm
+from surprise import NMF # Non-negative Matrix Factorization
+from surprise import SlopeOne # A simple yet accurate collaborative filtering algorithm
+from surprise import KNNBasic # A basic collaborative filtering algorithm.
+from surprise import CoClustering # A collaborative filtering algorithm based on co-clustering.
+from surprise import BaselineOnly # Algorithm predicting the baseline estimate for given user and item.
+from surprise import NormalPredictor # Algorithm predicting a random rating
+
 
 
 ############################
@@ -72,19 +87,6 @@ sep_indexs = [(seps[i-1]<=rating.Timestamp)&(rating.Timestamp<seps[i]) for i in 
 
 
 # --- Set models ---
-from src.get_CF_varidation_arrays import get_CF_varidation_arrays
-from src.Suprise_algo_wrapper import algo_wrapper
-from src.two_way_aspect_model import two_way_aspect_model
-from src.RandomWalkCF import RandomWalkCF
-
-from surprise import SVD # SVD algorithm
-from surprise import NMF # Non-negative Matrix Factorization
-from surprise import SlopeOne # A simple yet accurate collaborative filtering algorithm
-from surprise import KNNBasic # A basic collaborative filtering algorithm.
-from surprise import CoClustering # A collaborative filtering algorithm based on co-clustering.
-from surprise import BaselineOnly # Algorithm predicting the baseline estimate for given user and item.
-from surprise import NormalPredictor # Algorithm predicting a random rating
-
 svd       = algo_wrapper(SVD())
 nmf       = algo_wrapper(NMF())
 slopeone  = algo_wrapper(SlopeOne())
@@ -100,6 +102,8 @@ two_way_aspect_Z020 = two_way_aspect_model(Z=20, item_attributes=item_attributes
 
 randomwalk = RandomWalkCF()
 
+svd_item_attributes = MF()
+
 models = {
         #"svd": svd,
         #"nmf": nmf,
@@ -112,13 +116,14 @@ models = {
         #"two_way_aspect_Z005": two_way_aspect_Z005,
         #"two_way_aspect_Z010": two_way_aspect_Z010,
         #"two_way_aspect_Z020": two_way_aspect_Z020,
-        "randomwalk": randomwalk
+        #"randomwalk": randomwalk,
+        "svd_item_attributes": svd_item_attributes,
         }
 
 # --- varidation ---
 n_random_selected_item_ids = 1000
 
-def get_varidation_arrays(arg_dict, **fit_args):
+def get_varidation_arrays(arg_dict):
     """
     example of arg_dict:
         arg_dict = {
@@ -136,16 +141,27 @@ def get_varidation_arrays(arg_dict, **fit_args):
     test_user_ids = user_ids[sep_indexs[i+1]]
     test_item_ids = item_ids[sep_indexs[i+1]]
     test_values   = values[sep_indexs[i+1]]
-    validation_arrays =  get_CF_varidation_arrays(
-                train_user_ids, train_item_ids, train_values,
-                test_user_ids, test_item_ids, test_values,
-                models[model_name],
-                n_random_selected_item_ids=n_random_selected_item_ids,
-                remove_still_interaction_from_test=True,
-                random_seed=random_seed,
-                topN=topN,
-                **fit_args
-            )
+    if model_name == 'svd_item_attributes':
+        validation_arrays =  get_CF_varidation_arrays(
+                    train_user_ids, train_item_ids, train_values,
+                    test_user_ids, test_item_ids, test_values,
+                    models[model_name],
+                    n_random_selected_item_ids=n_random_selected_item_ids,
+                    remove_still_interaction_from_test=True,
+                    random_seed=random_seed,
+                    topN=topN,
+                    user_attributes=dict(), item_attributes=item_attributes
+                )
+    else:
+        validation_arrays =  get_CF_varidation_arrays(
+                    train_user_ids, train_item_ids, train_values,
+                    test_user_ids, test_item_ids, test_values,
+                    models[model_name],
+                    n_random_selected_item_ids=n_random_selected_item_ids,
+                    remove_still_interaction_from_test=True,
+                    random_seed=random_seed,
+                    topN=topN,
+                )
     file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, i))
     pickle.dump(validation_arrays, open(file_name, 'wb'))
     print("END on {}".format(arg_dict))
