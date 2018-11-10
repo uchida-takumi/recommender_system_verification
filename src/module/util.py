@@ -97,6 +97,18 @@ class id_transformer:
         """
         return [get_key_from_val(self.id_convert_dict, ind) for ind in indexes]
     
+    def fit_update(self, ids):
+        """
+        ARGUMETs:
+            ids [array-like object]: 
+                array of id of user or item.        
+        """
+        ids_ = sorted(list(set(ids)))
+        ids_ = [id_ for id_ in ids_ if id_ not in self.id_convert_dict.keys()]
+        now_max_id = max(self.id_convert_dict.values())
+        new_id_convert_dict = {i:now_max_id+1+index for index,i in enumerate(ids_)}
+        self.id_convert_dict.update(new_id_convert_dict)
+    
     
         
 def get_key_from_val(dict_, val, unknown=None):

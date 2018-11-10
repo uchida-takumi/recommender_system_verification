@@ -12,14 +12,16 @@ import os
 import sys
 import random
 
-from module import util
+from src.module import util
 
 # --- models ---
-from module.get_CF_varidation_arrays import get_CF_varidation_arrays
-from module.Suprise_algo_wrapper import algo_wrapper
-from module.two_way_aspect_model import two_way_aspect_model
-from module.RandomWalkCF import RandomWalkCF
-from module.MF import MF
+from src.module.get_CF_varidation_arrays import get_CF_varidation_arrays
+from src.module.Suprise_algo_wrapper import algo_wrapper
+from src.module.two_way_aspect_model import two_way_aspect_model
+from src.module.RandomWalkCF import RandomWalkCF
+from src.module.MF import MF
+from src.module.ContentBasedCF import ContentBasedCF
+from src.module.ContentBoostedCF import ContentBoostedCF
 
 from surprise import SVD # SVD algorithm
 from surprise import NMF # Non-negative Matrix Factorization
@@ -96,13 +98,16 @@ coclustering = algo_wrapper(CoClustering())
 baseline  = algo_wrapper(BaselineOnly())
 randommodel = algo_wrapper(NormalPredictor())
 
-two_way_aspect_Z005 = two_way_aspect_model(Z=5, item_attributes=item_attributes)
-two_way_aspect_Z010 = two_way_aspect_model(Z=10, item_attributes=item_attributes)
-two_way_aspect_Z020 = two_way_aspect_model(Z=20, item_attributes=item_attributes)
+two_way_aspect_Z005 = two_way_aspect_model(item_attributes=item_attributes, Z=5,)
+two_way_aspect_Z010 = two_way_aspect_model(item_attributes=item_attributes, Z=10,)
+two_way_aspect_Z020 = two_way_aspect_model(item_attributes=item_attributes, Z=20,)
 
 randomwalk = RandomWalkCF()
-
 svd_item_attributes = MF()
+
+my_mf = MF()
+my_contentbased = ContentBasedCF()
+my_contentboosted = ContentBoostedCF()
 
 models = {
         #"svd": svd,
@@ -117,7 +122,10 @@ models = {
         #"two_way_aspect_Z010": two_way_aspect_Z010,
         #"two_way_aspect_Z020": two_way_aspect_Z020,
         #"randomwalk": randomwalk,
-        "svd_item_attributes": svd_item_attributes,
+        #"svd_item_attributes": svd_item_attributes,
+        #"my_mf": my_mf,
+        #"my_contentbased": my_contentbased,
+        "my_contentboosted": my_contentboosted,
         }
 
 # --- varidation ---
@@ -141,7 +149,7 @@ def get_varidation_arrays(arg_dict):
     test_user_ids = user_ids[sep_indexs[i+1]]
     test_item_ids = item_ids[sep_indexs[i+1]]
     test_values   = values[sep_indexs[i+1]]
-    if model_name == 'svd_item_attributes':
+    if model_name in ['svd_item_attributes', 'my_contentbased', 'my_contentboosted']:
         validation_arrays =  get_CF_varidation_arrays(
                     train_user_ids, train_item_ids, train_values,
                     test_user_ids, test_item_ids, test_values,

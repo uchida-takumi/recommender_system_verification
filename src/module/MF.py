@@ -11,7 +11,7 @@ from . import util
 '''
 import numpy as np
 import sys
-from src import util
+from src.module import util
 '''
 
 

@@ -9,12 +9,12 @@ from .util import id_transformer
 """プログラミング用
 import copy
 import numpy as np
-from src.PLSA import plsa
-from src.util import id_transformer
+from src.module.PLSA import plsa
+from src.module.util import id_transformer
 """
 
 class two_way_aspect_model:
-    def __init__(self, Z, item_attributes):
+    def __init__(self, item_attributes, Z=10):
         """
         # ARGUMENTs
             Z[int]: 
@@ -27,7 +27,7 @@ class two_way_aspect_model:
         # Example
             Z = 2            
         """
-        self._two_way_aspect_model = _two_way_aspect_model(Z)
+        self.core_two_way_aspect_model = core_two_way_aspect_model(Z)
         self.item_attributes = item_attributes
 
     def fit(self ,user_ids, item_ids, values, postive_threshold=5):
@@ -40,7 +40,9 @@ class two_way_aspect_model:
             the set of (user_id, item_id) means that the user_id like the item_id.
         values [array like object]:
             result of the preference. (the score how user like item)
-            in this model, only preference which larger than 0 are used. 
+            in this model, only preference which larger than postive_threshold are used.
+        postive_threshold [number]:
+            threshold of values. the larger value than postive_threshold is learned. 
         """
         # filter ids in values > 0
         _user_ids, _item_ids = list(), list()
@@ -50,8 +52,8 @@ class two_way_aspect_model:
                 _item_ids.append(item_id)
                 
         # fit id_transformer
-        set_item_ids = set(list(_user_ids) + list(self.item_attributes))
-        set_user_ids = set(list(_item_ids))
+        set_item_ids = set(list(_item_ids) + list(self.item_attributes))
+        set_user_ids = set(list(_user_ids))
 
         item_id_transformer, user_id_transformer = id_transformer(), id_transformer()
         item_id_transformer.fit(set_item_ids)
@@ -68,7 +70,7 @@ class two_way_aspect_model:
         
         self.transforemed_item_attributes = transforemed_item_attributes
         
-        # make matrix Npa, Nma as self._two_way_aspect_model.fit() argument.
+        # make matrix Npa, Nma as self.core_two_way_aspect_model.fit() argument.
         ## Npa(count matrix of person-actor) is equivalent with user-attributes.
         ## Nma(count matrix of movie-actor) is equivalent with item-attributes.
         n_item_ids = len(set_item_ids)
@@ -82,10 +84,10 @@ class two_way_aspect_model:
         for user_id, item_id in zip(transformed_user_ids, transformed_item_ids):
             Npa[user_id] += Nma[item_id]
             
-        # fit self._two_way_aspect_model
-        self._two_way_aspect_model.fit(Npa)
+        # fit self.core_two_way_aspect_model
+        self.core_two_way_aspect_model.fit(Npa)
         # predict Ppa (percent of person-movie which is equivalent with user_item)
-        self.Ppa = self._two_way_aspect_model.predict(Nma)
+        self.Ppa = self.core_two_way_aspect_model.predict(Nma)
 
     def predict(self, user_ids, item_ids):
         transformed_item_ids = self.item_id_transformer.transform(item_ids, unknown=None)
@@ -107,7 +109,7 @@ class two_way_aspect_model:
             
         
 
-class _two_way_aspect_model:
+class core_two_way_aspect_model:
     def __init__(self, Z):
         """
         # ARGUMENTs
@@ -173,6 +175,8 @@ if __name__=='__main__':
 
     user_ids = [5,5,5,6,6,7]
     item_ids = [1,3,6,2,6,3]
+    values   = [1,3,3,2,3,3]
+    postive_threshold = 3
     item_attributes = {
             1: [1,0,1,0],
             2: [0,0,1,1],
@@ -181,11 +185,10 @@ if __name__=='__main__':
             99: [1,1,1,1],
             }
 
-    twam = two_way_asspect_model(Z=3, item_attributes=item_attributes)
-    twam.fit(user_ids, item_ids)
+    twam = two_way_aspect_model(Z=3, item_attributes=item_attributes)
+    twam.fit(user_ids, item_ids, values, postive_threshold)
     twam.predict(user_ids, item_ids)
     twam.predict([5], [99]) # 学習中にないitemID
     twam.predict([5], [123]) # attributeにすらないitemID
-    twam.predict([123], [3]) 
-    twam.predict([123], [123]) 
-    # 要、もう少しテストが必要
+    twam.predict([123], [3]) # 学習中にないuserID
+    twam.predict([123], [123]) # itemもuserも完全に新規の場合

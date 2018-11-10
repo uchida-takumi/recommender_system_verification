@@ -1,9 +1,11 @@
+
 doc/
 local_file/
 .DS_store
 *.pickle
 *.csv
 *.zip
+output/*.tsv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
