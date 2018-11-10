@@ -123,8 +123,8 @@ models = {
         #"two_way_aspect_Z020": two_way_aspect_Z020,
         #"randomwalk": randomwalk,
         #"svd_item_attributes": svd_item_attributes,
-        #"my_mf": my_mf,
-        #"my_contentbased": my_contentbased,
+        "my_mf": my_mf,
+        "my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
         }
 
