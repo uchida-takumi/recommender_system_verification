@@ -55,10 +55,9 @@ class ContentBasedCF:
             _i = item_ids_transformer.transform([i], unknown=None)[0]
             if _i is not None:
                 self.item_attributes[_i, :] = vec
-        
-        # 速度改善のため、予測値のキャッシュを作成する。
-        self.predict_cash = {}
+
         return self
+        
 
     def predict(self, user_ids, item_ids, item_attributes, user_attributes='NotUse'):
         """
@@ -70,11 +69,14 @@ class ContentBasedCF:
             item_attributes [dict]:
                 pass
         """
+        # 速度改善のため、予測値のキャッシュを作成する。
+        self.predict_cash = {}
+
         # predict
         results = []
-        for u,i in zip(user_ids, item_ids):
-            tf_u = self.user_ids_transformer.transform([u], unknown=None)[0]
-            tf_i = self.item_ids_transformer.transform([i], unknown=None)[0]
+        tf_us = self.user_ids_transformer.transform(user_ids, unknown=None)
+        tf_is = self.item_ids_transformer.transform(item_ids, unknown=None)
+        for i,tf_u,tf_i in zip(item_ids, tf_us, tf_is):
             if tf_u is None:
                 # user_idが未知の場合は全体平均で返却する。
                 predicted = self.mean_ratings
@@ -155,7 +157,7 @@ if __name__ == '__main__':
             }
     
     knn = 4
-    CBCF = ContentBoostedCF(knn)
+    CBCF = ContentBasedCF(knn)
     CBCF.fit(user_ids, item_ids, ratings, item_attributes)
     CBCF.predict(user_ids, item_ids, item_attributes)
     
