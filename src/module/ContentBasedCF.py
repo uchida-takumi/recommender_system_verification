@@ -69,29 +69,18 @@ class ContentBasedCF:
             item_attributes [dict]:
                 pass
         """
-        # 速度改善のため、予測値のキャッシュを作成する。
-        self.predict_cash = {}
-
-        # predict
-        results = []
         tf_us = self.user_ids_transformer.transform(user_ids, unknown=None)
-        tf_is = self.item_ids_transformer.transform(item_ids, unknown=None)
-        for i,tf_u,tf_i in zip(item_ids, tf_us, tf_is):
+        item_attrs = [item_attributes[item_id] for item_id in item_ids]
+        
+        def get_predict(tf_u, item_attr):
             if tf_u is None:
-                # user_idが未知の場合は全体平均で返却する。
-                predicted = self.mean_ratings
+                return self.mean_ratings
             else:
-                if tf_i is not None:
-                    item_attr = self.item_attributes[tf_i]
-                else:
-                    item_attr = item_attributes.get(i, None)
-                if item_attr is None:
-                    raise 'No item_id in item_attributes.'
-                predicted = self.predict_cash.get((tf_u, str(item_attr)), self._predict(tf_u, item_attr))
-                self.predict_cash[(tf_u, str(item_attr))] = predicted
-            results.append(predicted)
+                return self._predict(tf_u, item_attr)
+            
+        predicted = map(get_predict, tf_us, item_attrs)
+        return np.array(list(predicted))
 
-        return np.array(results)
 
     def _predict(self, u, attributes):
         """
@@ -101,19 +90,17 @@ class ContentBasedCF:
             attributes [array like object]:
                 a vector of item attributes.
         """
-        knn_item_ids, similarities = self._get_similar_item_ids(attributes)
-        C = 0
-        predicted = 0
-        for i,sim in zip(knn_item_ids, similarities):
-            r = self.rating.get((u,i), None)
-            if r is not None:                    
-                predicted += sim * r
-                C += sim
-        predicted = predicted / C if C>0 else 0.
-        
+        knn_item_ids, similarities = self._get_similar_item_ids(attributes)        
+        _rating = np.array([self.rating.get((u,i), np.nan) for i in knn_item_ids])
+        bo_index = ~np.isnan(_rating)
+        if any(bo_index):
+            sum_similarities = similarities[bo_index].sum() if similarities[bo_index].sum() > 0 else 1
+            predicted = (_rating[bo_index] * similarities[bo_index]).sum() / sum_similarities
+        else:
+            predicted = self.mean_ratings
         return predicted
+            
 
-    
     def _get_similar_item_ids(self, attributes):
         """
         Arguments:
@@ -122,7 +109,7 @@ class ContentBasedCF:
                 
         Example:
             attributes = [0,1,1]
-        """        
+        """
         # i = 2
         func1d = lambda array: cosine_similarity(array, attributes)
         sims = np.apply_along_axis(func1d, axis=1, arr=self.item_attributes)
@@ -133,8 +120,6 @@ class ContentBasedCF:
         
         return top_ids, sims[top_ids]
     
-    
-
 def cosine_similarity(array1, array2):
     sim = 1 - spatial.distance.cosine(array1, array2)
     return sim
@@ -146,6 +131,26 @@ def cosine_similarity(array1, array2):
 if __name__ == '__main__':
     # Usage
     ## 下記のデータは明らかに、item_attribute = [負の影響, 影響なし, 正の影響]になっている。
+    """
+    # item_attributesの数は処理速度に無関係
+    # 予測のサンプル数は処理速度に比例影響
+    # item_idの異なり数が影響しているようだ。
+    import numpy as np
+    user_ids = np.random.choice(range(100), size=1000)
+    item_ids = np.random.choice(range(500), size=1000)
+    ratings  = np.random.choice(range(1,6), size=1000)
+    item_attributes = {i:np.random.choice([0,1], size=18) for i in range(5000)}
+    knn = 50
+    CBCF = ContentBasedCF(knn)
+    CBCF.fit(user_ids, item_ids, ratings, item_attributes)
+
+    user_ids = np.random.choice(range(100), size=1000)
+    item_ids = np.random.choice(range(500), size=1000)
+
+    CBCF.predict(user_ids, item_ids, item_attributes) 
+    self = CBCF
+    """
+    
     user_ids = [1,1,1,1,5,5]
     item_ids = [1,2,3,4,2,4]
     ratings  = [5,5,3,1,5,1]
@@ -162,12 +167,13 @@ if __name__ == '__main__':
     CBCF.predict(user_ids, item_ids, item_attributes)
     
     # outsample
-    CBCF.predict([1], item_ids=[99], item_attributes={99:[0,1,1]})    
+    CBCF.predict([1], item_ids=[99], item_attributes={99:[0,1,1]})
     CBCF.predict([5], item_ids=[99], item_attributes={99:[0,1,1]})    
     CBCF.predict([1], item_ids=[99], item_attributes={99:[0,0,1]})    
     CBCF.predict([5], item_ids=[99], item_attributes={99:[0,0,1]})    
     CBCF.predict([1], item_ids=[99], item_attributes={99:[0,0,0]}) # attributeの合計が0なら予測は0になる。（問題なし）    
     CBCF.predict([1], item_ids=[99], item_attributes={99:[1,1,0]})    
+    CBCF.predict([1], item_ids=[99], item_attributes={99:[1,0,0]})    
     CBCF.predict([5], item_ids=[99], item_attributes={99:[1,1,0]})    
 
     CBCF.predict([55], item_ids=[99], item_attributes={99:[0,1,1]})# 未知のユーザーは予測が平均値になる。

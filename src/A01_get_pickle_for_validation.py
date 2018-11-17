@@ -45,7 +45,7 @@ random.seed(random_seed)
 np.random.seed(random_seed)
 
 # set validation parameteres
-train_test_days = 90
+train_test_days = 10
 n_hold = 10
 topN = [5,10,20]
 
