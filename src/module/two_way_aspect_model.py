@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+This is code which based on:
+    @inproceedings{schein2002methods,
+      title={Methods and metrics for cold-start recommendations},
+      author={Schein, Andrew I and Popescul, Alexandrin and Ungar, Lyle H and Pennock, David M},
+      booktitle={Proceedings of the 25th annual international ACM SIGIR conference on Research and development in information retrieval},
+      pages={253--260},
+      year={2002},
+      organization={ACM}
+    }    
+"""
 
 import copy
 import numpy as np
@@ -85,9 +96,11 @@ class two_way_aspect_model:
             Npa[user_id] += Nma[item_id]
             
         # fit self.core_two_way_aspect_model
-        self.core_two_way_aspect_model.fit(Npa)
-        # predict Ppa (percent of person-movie which is equivalent with user_item)
-        self.Ppa = self.core_two_way_aspect_model.predict(Nma)
+        self.core_two_way_aspect_model.fit_person_aspect(Npa)
+        # fit Ppa (percent of person-movie which is equivalent with user_item)
+        self.core_two_way_aspect_model.fit_movie_aspect(Nma)
+        
+        self.Pp_m = self.core_two_way_aspect_model.get_Pp_m()
 
     def predict(self, user_ids, item_ids):
         transformed_item_ids = self.item_id_transformer.transform(item_ids, unknown=None)
@@ -97,13 +110,13 @@ class two_way_aspect_model:
         predicted = []
         for user_id, item_id in zip(transformed_user_ids, transformed_item_ids):
             if (user_id is not None) and (item_id is not None):
-                predicted.append(self.Ppa[user_id, item_id])
+                predicted.append(self.Pp_m[user_id, item_id])
             elif (user_id is None) and (item_id is not None):
-                predicted.append(self.Ppa[:, item_id].mean())
+                predicted.append(self.Pp_m[:, item_id].mean())
             elif (user_id is not None) and (item_id is None):
-                predicted.append(self.Ppa[user_id, :].mean())
+                predicted.append(self.Pp_m[user_id, :].mean())
             else:
-                predicted.append(self.Ppa[:, :].mean())
+                predicted.append(self.Pp_m[:, :].mean())
         
         return np.array(predicted)
             
@@ -120,7 +133,7 @@ class core_two_way_aspect_model:
         """
         self.Z = Z
         
-    def fit(self, Npa):    
+    def fit_person_aspect(self, Npa):    
         """
         # ARGUMENTs
             Npa[np.array]: 
@@ -141,45 +154,52 @@ class core_two_way_aspect_model:
         self.pa_model = pa_model
         
 
-    def predict(self, Nma):
+    def fit_movie_aspect(self, Nma):
         """
         # ARGUMENTs
             Nma[np.array]:
-                count matrix which dimention is [movie, movie-actors]
+                count matrix which dimention is [movie-actors, movie]
         # Example
             import numpy as np
-            Nma = np.array([
-                [1, 0, 1, 1],
-                [1, 0, 0, 0],
+            Nam = np.array([
+                [1, 0, 1, 0],
+                [1, 0, 0, 1],
                 [1, 1, 1, 0],
             ])
         """
         # the parameters of person/actor aspect model are hold constant.
-        Pz = self.pa_model.Pz
         Pa_z = self.pa_model.Py_z
         
         # Fold-In  
         ma_model = plsa(self.Z)
-        ma_model.fit(Nma, hold_Pz=Pz, hold_Py_z=Pa_z)
-        self.ma_model = ma_model
-
-        Pp_z = self.pa_model.Px_z        
-        Pm_z = self.ma_model.Px_z        
-        Ppm = (Pz[:,None]*Pp_z).T.dot(Pm_z)
+        ma_model.fit(Nma, hold_Py_z=Pa_z)
+        self.ma_model = ma_model        
+    
+    def get_Pp_m(self):
+        # P(p|z)
+        Pp = self.pa_model.Pxy.sum(axis=1)
+        Pp_z = (self.pa_model.Pz_x * Pp[None,:]).T
+        Pp_z /= Pp_z.sum(axis=0, keepdims=True)
+        # P(z|m)
+        Pz_m = self.ma_model.Pz_x
         
-        return Ppm
+        # Recommendation matrix
+        Pp_m = Pp_z.dot(Pz_m)
+        Pp_m /= Pp_m.sum(axis=0, keepdims=True)
+        
+        return Pp_m
         
 
 
 if __name__=='__main__':
 
-    user_ids = [5,5,5,6,6,7]
-    item_ids = [1,3,6,2,6,3]
-    values   = [1,3,3,2,3,3]
+    user_ids = [5,5,5,6,6,6,6]
+    item_ids = [1,3,6,2,6,3,2]
+    values   = [1,3,3,2,3,1,2]
     postive_threshold = 3
     item_attributes = {
             1: [1,0,1,0],
-            2: [0,0,1,1],
+            2: [1,1,0,0],
             3: [0,1,0,0],
             6: [1,0,1,1],
             99: [1,1,1,1],

@@ -13,6 +13,8 @@ import numpy as np
 class plsa(object):
     def __init__(self, Z, random_seed=None):
         """
+        PLSA as ( X → Z → Y )
+        
         ARGUMENTs:
             Z [int]: the number of latent class.
             random_seed [int]: is set as np.random_seed(random_seed)
@@ -22,7 +24,7 @@ class plsa(object):
 
                 
     def fit(self, N, k=200, t=1.0e-7, 
-            hold_Pz=None, hold_Px_z=None, hold_Py_z=None):
+            hold_Pz=None, hold_Pz_x=None, hold_Py_z=None):
         """
         train with EMalgorithm.
         
@@ -48,26 +50,22 @@ class plsa(object):
         # --- set up ----
         self.N = N
         self.X, self.Y = N.shape[0], N.shape[1]
-        self.hold_Pz , self.hold_Px_z, self.hold_Py_z = hold_Pz, hold_Px_z, hold_Py_z
+        self.hold_Pz , self.hold_Pz_x, self.hold_Py_z = hold_Pz, hold_Pz_x, hold_Py_z
         
-        # P(x)
-        if self.hold_Pz is None:
-            self.Pz  = np.random.rand(self.Z)
-            self.Pz /= np.sum(self.Pz)
+        # P(z|x,y). the dimention is [z, x, y]
+        self.Pz_xy = np.zeros(shape=(self.Z, self.X, self.Y))
+        
+        # P(z|x). the dimention is [z, x]
+        if self.hold_Pz_x is None:
+            self.Pz_x = np.random.rand(self.Z, self.X)
+            self.Pz_x /= np.sum(self.Pz_x, axis=0, keepdims=True)
         else:
-            self.Pz = hold_Pz
+            self.Pz_x = hold_Pz_x
         
-        # P(x|z)
-        if self.hold_Px_z is None:
-            self.Px_z = np.random.rand(self.Z, self.X)
-            self.Px_z /= np.sum(self.Px_z, axis=1, keepdims=True)
-        else:
-            self.Px_z = hold_Px_z
-        
-        # P(y|z)
+        # P(y|z). the dimention is [y, z]
         if self.hold_Py_z is None:
-            self.Py_z  = np.random.rand(self.Z, self.Y)
-            self.Py_z /= np.sum(self.Py_z, axis=1, keepdims=True)
+            self.Py_z  = np.random.rand(self.Y, self.Z)
+            self.Py_z /= np.sum(self.Py_z, axis=0, keepdims=True)
         else:
             self.Py_z = hold_Py_z
         
@@ -84,63 +82,47 @@ class plsa(object):
             
             prev_log_likelihood = this_log_likelihood
         
-        self._set_Px_and_Py_as_attribute()
-        
     
     def _e_step(self):
         """
-        E-step
-        update P(z|x,y). dimentions of Pz_xy is [x,y,z].
+        E-step:
+            update P(z|x,y). dimentions of Pz_xy is [z,x,y].
         """
-        # the dimmention of the arrayes are [x, y, z] 
-        self.Pz_xy = self.Pz[None, None, :] * self.Px_z.T[:, None, :] * self.Py_z.T[None, :, :]
+        for z in range(self.Z):
+            self.Pz_xy[z,:,:] = self.Pz_x[[z],:].T.dot(self.Py_z[:,[z]].T)
         ## add 1/sys.maxsize to avoid 0-divison error
-        self.Pz_xy /= np.sum(self.Pz_xy, axis=2, keepdims=True) + 1/sys.maxsize
-
+        self.Pz_xy /= self.Pz_xy.sum(axis=0, keepdims=True) + 1/sys.maxsize
+        
+        
     def _m_step(self):
         """
-        M-step
-        update P(z), P(x|z), P(y|z)
+        M-step:
+            update P(z|x). dimentions of Pz_x is [z, x] 
+            update P(y|z). dimentions of Py_z is [y, z]
         """
-        NP = self.N[:, :, None] * self.Pz_xy
+        NP = self.N[None, :, :] * self.Pz_xy
 
-        if self.hold_Pz is None:
-            self.Pz  = np.sum(NP, axis=(0,1))
-            self.Pz /= np.sum(self.Pz)
-
-        if self.hold_Px_z is None:            
-            self.Px_z  = np.sum(NP, axis=1).T
-            self.Px_z /= np.sum(self.Px_z, axis=1, keepdims=True)
+        if self.hold_Pz_x is None:
+            self.Pz_x = np.sum(NP, axis=2)            
+            self.Pz_x /= np.sum(self.Pz_x, axis=0, keepdims=True)
 
         if self.hold_Py_z is None:
-            self.Py_z  = np.sum(NP, axis=0).T
-            self.Py_z /= np.sum(self.Py_z, axis=1, keepdims=True)
-        
-    def _set_Px_and_Py_as_attribute(self):
-        """
-        set P(x), P(y) to attributes of self.
-        """
-        NP = self.N[:, :, None] * self.Pz_xy
-
-        self.Px  = np.sum(NP, axis=(1,2))
-        self.Px /= np.sum(self.Px)
-
-        self.Py  = np.sum(NP, axis=(0,2))
-        self.Py /= np.sum(self.Py)
+            self.Py_z  = np.sum(NP, axis=1).T
+            self.Py_z /= np.sum(self.Py_z, axis=0, keepdims=True)
         
     def _log_likelihood(self):
-        Pxy = self.Pz[None, None, :] * self.Px_z.T[:, None, :] * self.Py_z.T[None, :, :]
-        Pxy = np.sum(Pxy, axis=2)
+        Pxy = self.Pz_x.T.dot(self.Py_z.T)
         Pxy /= np.sum(Pxy)
+        self.Pxy = Pxy
         
         # add 1/sys.maxsize to avoid log(0) error
         return np.sum(self.N * np.log(Pxy + 1/sys.maxsize))
-        
+    
         
 
 if __name__=='__main__':
     import numpy as np
-    from src.PLSA import plsa
+    from src.module.PLSA import plsa
     
     N = np.array([
         [20, 23, 1, 4],
@@ -153,17 +135,13 @@ if __name__=='__main__':
     plsa = plsa(2)
     plsa.fit(N)
 
-    print('P(z)')
-    print(plsa.Pz)
-    print('P(x|z)')
-    print(plsa.Px_z)
+    print('P(z|x)')
+    print(plsa.Pz_x)
     print('P(y|z)')
     print(plsa.Py_z)
-    print('P(z|x)')
-    Pz_x = plsa.Px_z.T * plsa.Pz[None, :]
-    print(Pz_x / np.sum(Pz_x, axis=1)[:, None])
-    print('P(z|y)')
-    Pz_y = plsa.Py_z.T * plsa.Pz[None, :]
-    print(Pz_y / np.sum(Pz_y, axis=1)[:, None])
+    print('P(z|x,y)')
+    print(plsa.Pz_xy)
+    print('P(x,y)')
+    print(plsa.Pxy)
     
     
