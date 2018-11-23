@@ -118,12 +118,12 @@ models = {
         #"coclustering": coclustering,
         #"baseline": baseline,
         #"randommodel": randommodel,
-        "two_way_aspect_Z005": two_way_aspect_Z005,
-        "two_way_aspect_Z010": two_way_aspect_Z010,
-        "two_way_aspect_Z020": two_way_aspect_Z020,
+        #"two_way_aspect_Z005": two_way_aspect_Z005,
+        #"two_way_aspect_Z010": two_way_aspect_Z010,
+        #"two_way_aspect_Z020": two_way_aspect_Z020,
         #"randomwalk": randomwalk,
         #"svd_item_attributes": svd_item_attributes,
-        "my_mf": my_mf,
+        #"my_mf": my_mf,
         "my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
         }
@@ -135,7 +135,7 @@ def get_varidation_arrays(arg_dict):
     """
     example of arg_dict:
         arg_dict = {
-                'model_name': 'randomwalk',
+                'model_name': 'my_contentbased',
                 'hold': 2
                 }
     """

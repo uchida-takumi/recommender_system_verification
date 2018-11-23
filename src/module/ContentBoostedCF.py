@@ -73,13 +73,13 @@ class ContentBoostedCF:
                 pass
         """
         results = []
-        for u,i in zip(user_ids, item_ids):
-            tf_u = self.user_ids_transformer.transform([u], unknown=None)[0]
-            tf_i = self.item_ids_transformer.transform([i], unknown=None)[0]
+        tf_us = self.user_ids_transformer.transform(user_ids, unknown=None)
+        tf_is = self.item_ids_transformer.transform(item_ids, unknown=None)
+        mean_values = np.mean(list(self.samples.values()))
+        for tf_u,tf_i in zip(tf_us, tf_is):
             if (tf_u is None) or (tf_i is None):
                 # user_id と item_attributes が未知の場合は全体平均で返却する。
-                predicted = np.mean(list(self.samples.values()))
-                
+                predicted = mean_values                
             else:
                 predicted = self._predict(tf_u, tf_i) 
             results.append(predicted)
@@ -156,9 +156,17 @@ class ContentBoostedCF:
         
         V = np.zeros(shape=(n_user_ids, n_item_ids))
         
-        for u,i in product(range(n_user_ids), range(n_item_ids)):
-            V[u,i] = self._get_v(u, i)
-            
+        user_item_ids = list(product(range(n_user_ids), range(n_item_ids)))
+        _user_ids = [_[0] for _ in user_item_ids]
+        _item_ids = [_[1] for _ in user_item_ids]
+        
+        pure_content_predictions = self.pure_content_predictor.predict(_user_ids, _item_ids, item_attributes=self.item_attributes)
+        
+        V = np.zeros(shape=(n_user_ids, n_item_ids))
+        for u,i,p in zip(_user_ids, _item_ids, pure_content_predictions):
+            V[u,i] = p
+        for u,i in self.samples:
+            V[u,i] = self.samples[(u,i)]
         self.V = V
         
     
@@ -168,10 +176,16 @@ class ContentBoostedCF:
         self.pure_content_predictor = pure_content_predictor
 
     def _get_v(self, u, i):
+        try:
+            return self.V[u, i]
+        except:
+            return self._get_pure_content_prediction(u, i)
+        """
         if (u,i) in self.samples:
             return  self.samples[(u,i)]
         else:
             return self._get_pure_content_prediction(u, i)
+        """
         
     def _get_sw_a(self, a, _max=2):
         """ eq4 """
@@ -226,6 +240,25 @@ if __name__ == '__main__':
     
     # Usage
     ## 下記のデータは明らかに、item_attribute = [負の影響, 影響なし, 正の影響]になっている。
+    """
+    # それなりの大量データでの結果
+    from src.module.ContentBoostedCF import ContentBoostedCF
+    import numpy as np
+    user_ids = np.random.choice(range(100), size=1000)
+    item_ids = np.random.choice(range(500), size=1000)
+    ratings  = np.random.choice(range(1,6), size=1000)
+    item_attributes = {i:np.random.choice([0,1], size=18) for i in range(5000)}
+
+    CBCF = ContentBoostedCF()
+    CBCF.fit(user_ids, item_ids, ratings, item_attributes)
+
+    user_ids = np.random.choice(range(100), size=1000)
+    item_ids = np.random.choice(range(500), size=1000)
+
+    CBCF.predict(user_ids, item_ids, item_attributes) 
+    self = CBCF
+    """
+
     user_ids = [1,1,1,1,5,5,7,8]
     item_ids = [1,2,3,4,2,4,1,4]
     ratings  = [5,5,3,1,5,1,5,1]
@@ -251,13 +284,7 @@ if __name__ == '__main__':
     self.predict([99,99], [1,2]) # 新しいuser_idの予測は平均値
     
     self.V
-    self._get_pure_content_prediction(3,0)
+    self._get_pure_content_prediction(1,1)
     
-'''    
-a = PureContentBasedModel(item_attributes)
-a.fit(user_ids, item_ids, ratings)
-a.predict(user_ids, item_ids)
-'''
-
 
     

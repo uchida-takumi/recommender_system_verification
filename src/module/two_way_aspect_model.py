@@ -183,7 +183,7 @@ class core_two_way_aspect_model:
         # P(z|m)
         Pz_m = self.ma_model.Pz_x
         
-        # Recommendation matrix
+        # Recommendation are made using P(p|m)
         Pp_m = Pp_z.dot(Pz_m)
         Pp_m /= Pp_m.sum(axis=0, keepdims=True)
         
