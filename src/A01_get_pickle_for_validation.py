@@ -93,8 +93,8 @@ sep_indexs = [(seps[i-1]<=rating.Timestamp)&(rating.Timestamp<seps[i]) for i in 
 svd       = algo_wrapper(SVD())
 nmf       = algo_wrapper(NMF())
 slopeone  = algo_wrapper(SlopeOne())
-userbased = algo_wrapper(KNNBasic(sim_options={'user_based':True}))
-itembased = algo_wrapper(KNNBasic(sim_options={'user_based':False}))
+userbased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':True, 'name':'cosine'}))
+itembased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':False, 'name':'cosine'}))
 coclustering = algo_wrapper(CoClustering())
 baseline  = algo_wrapper(BaselineOnly())
 randommodel = algo_wrapper(NormalPredictor())
@@ -106,7 +106,9 @@ two_way_aspect_Z020 = two_way_aspect_model(item_attributes=item_attributes, Z=20
 randomwalk = RandomWalkCF()
 svd_item_attributes = MF()
 
-my_mf = MF()
+my_mf_010 = MF(n_latent_factor=10)
+my_mf_050 = MF(n_latent_factor=50)
+my_mf_100 = MF(n_latent_factor=100)
 my_contentbased = ContentBasedCF()
 my_contentboosted = ContentBoostedCF()
 
@@ -124,7 +126,9 @@ models = {
         #"two_way_aspect_Z020": two_way_aspect_Z020,
         "randomwalk": randomwalk,
         "svd_item_attributes": svd_item_attributes,
-        #"my_mf": my_mf,
+        "my_mf_010": my_mf_010,
+        "my_mf_050": my_mf_050,
+        "my_mf_100": my_mf_100,
         #"my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
         }
