@@ -3,6 +3,7 @@
 """
 各モジュール（from surprise）からを評価するための中間生成物をpickleで保存する。
 """
+
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 import pandas as pd
@@ -110,21 +111,21 @@ my_contentbased = ContentBasedCF()
 my_contentboosted = ContentBoostedCF()
 
 models = {
-        #"svd": svd,
+        "svd": svd,
         #"nmf": nmf,
         #"slopeone": slopeone,
-        #"userbased": userbased,
-        #"itembased": itembased,
+        "userbased": userbased,
+        "itembased": itembased,
         #"coclustering": coclustering,
-        #"baseline": baseline,
-        #"randommodel": randommodel,
+        "baseline": baseline,
+        "randommodel": randommodel,
         #"two_way_aspect_Z005": two_way_aspect_Z005,
         #"two_way_aspect_Z010": two_way_aspect_Z010,
         #"two_way_aspect_Z020": two_way_aspect_Z020,
-        #"randomwalk": randomwalk,
-        #"svd_item_attributes": svd_item_attributes,
+        "randomwalk": randomwalk,
+        "svd_item_attributes": svd_item_attributes,
         #"my_mf": my_mf,
-        "my_contentbased": my_contentbased,
+        #"my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
         }
 

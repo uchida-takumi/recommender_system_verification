@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import numpy as np
-
+import re
 def get_CF_varidation_arrays(
                             train_user_ids, train_item_ids, train_values
                            ,test_user_ids, test_item_ids, test_values
@@ -62,7 +62,16 @@ def get_CF_varidation_arrays(
     np.random.seed(seed=random_seed)
     
     # ---- Training ----
-    model.fit(train_user_ids, train_item_ids, train_values, **fit_args)
+    # 高速化のために、一部の手法については学習idを限定する。
+    # model.__class__=='src.module.ContentBoostedCF.ContentBoostedCF'については、予測対象に含まれないIDを学習する必要はない。
+    # よってIDをフィルタリングする。
+    if re.match('^.*ContentBoostedCF.*$', model.__class__):
+        bo_user_ids = np.in1d(train_user_ids, test_user_ids)
+        bo_item_ids = np.in1d(train_item_ids, test_item_ids)
+        bo_ids = bo_user_ids & bo_item_ids
+        model.fit(train_user_ids[bo_ids], train_item_ids[bo_ids], train_values[bo_ids], **fit_args)        
+    else:
+        model.fit(train_user_ids, train_item_ids, train_values, **fit_args)
         
     # ---- Testing ----
     ## get recall and precision
@@ -93,7 +102,9 @@ def get_CF_varidation_arrays(
         random_selected_item_ids = np.random.choice(list(item_id_set), size=n_random_selected_item_ids, replace=False)
         
         predicted_random_item_ids = model.predict([user_id]*n_random_selected_item_ids, random_selected_item_ids, **fit_args)
+        #predicted_random_item_ids = model.predict([user_id]*n_random_selected_item_ids, random_selected_item_ids)
         predicted_the_item_id = model.predict([user_id], [item_id], **fit_args)
+        #predicted_the_item_id = model.predict([user_id], [item_id])
         
         predicted = np.concatenate([predicted_random_item_ids, predicted_the_item_id])
         item_ids  = np.concatenate([random_selected_item_ids, [item_id]])

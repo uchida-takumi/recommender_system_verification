@@ -280,7 +280,6 @@ class MF:
         return prediction
     
 
-
 if __name__ == '__main__':
     # Usage
     user_ids = [1,1,1,1,5,5,8,8]

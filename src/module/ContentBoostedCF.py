@@ -60,8 +60,6 @@ class ContentBoostedCF:
         # fit the pseudo user-rating matrix (V)
         self._fit_V()
 
-
-        pass        
         return self
     
     def predict(self, user_ids, item_ids, item_attributes='NotUse', user_attributes='NotUse'):
@@ -257,6 +255,17 @@ if __name__ == '__main__':
 
     CBCF.predict(user_ids, item_ids, item_attributes) 
     self = CBCF
+    
+    
+    # ぺぺぺぺ
+    from src.module.ContentBoostedCF import ContentBoostedCF
+    user_ids = train_user_ids
+    item_ids = train_item_ids
+    ratings  = train_values
+    self = ContentBoostedCF()
+    self.fit(user_ids, item_ids, ratings, item_attributes)
+
+
     """
 
     user_ids = [1,1,1,1,5,5,7,8]
