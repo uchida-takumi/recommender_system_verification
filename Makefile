@@ -8,11 +8,11 @@ docker-build:
 	docker build -t hoge:latest .
 
 docker-run-A01:
-	docker run -d --rm -v $(ROOT_DIR):/docker-work \
+	docker run --rm -v $(ROOT_DIR):/docker-work \
 		hoge:latest \
 		python3 -m src.A01_get_pickle_for_validation
 
 docker-run-A02:
-	docker run -d --rm -v $(ROOT_DIR):/docker-work \
+	docker run --rm -v $(ROOT_DIR):/docker-work \
 		hoge:latest \
 		python3 -m src.A02_aggregate_peformances_from_validation_result_pickle
