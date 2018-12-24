@@ -109,7 +109,7 @@ svd_item_attributes = MF()
 
 #my_contentbased = ContentBasedCF()
 my_contentbased = MF(n_latent_factor=0)
-my_contentboosted = ContentBoostedCF(PureContentBasedModel=my_contentbased)
+my_contentboosted = ContentBoostedCF(pure_content_predictor=my_contentbased)
 
 models = {
         #"svd": svd,
