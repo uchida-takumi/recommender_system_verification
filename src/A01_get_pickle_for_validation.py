@@ -106,30 +106,30 @@ two_way_aspect_Z020 = two_way_aspect_model(item_attributes=item_attributes, Z=20
 randomwalk = RandomWalkCF()
 svd_item_attributes = MF()
 
-my_mf_010 = MF(n_latent_factor=10)
-my_mf_050 = MF(n_latent_factor=50)
-my_mf_100 = MF(n_latent_factor=100)
-my_contentbased = ContentBasedCF()
-my_contentboosted = ContentBoostedCF()
+
+#my_contentbased = ContentBasedCF()
+my_contentbased = MF(n_latent_factor=0)
+my_contentboosted = ContentBoostedCF(PureContentBasedModel=my_contentbased)
 
 models = {
-        "svd": svd,
+        #"svd": svd,
         #"nmf": nmf,
         #"slopeone": slopeone,
-        "userbased": userbased,
-        "itembased": itembased,
+        #"userbased": userbased,
+        #"itembased": itembased,
         #"coclustering": coclustering,
-        "baseline": baseline,
-        "randommodel": randommodel,
-        #"two_way_aspect_Z005": two_way_aspect_Z005,
-        #"two_way_aspect_Z010": two_way_aspect_Z010,
-        #"two_way_aspect_Z020": two_way_aspect_Z020,
+        #"baseline": baseline,
+        #"randommodel": randommodel,
+        "two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
+        "two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
+        "two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
+        "two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
         "randomwalk": randomwalk,
-        "svd_item_attributes": svd_item_attributes,
-        "my_mf_010": my_mf_010,
-        "my_mf_050": my_mf_050,
-        "my_mf_100": my_mf_100,
-        #"my_contentbased": my_contentbased,
+        #"svd_item_attributes": svd_item_attributes,
+        "my_mf_200": MF(n_latent_factor=200),
+        "my_mf_400": MF(n_latent_factor=400),
+        "my_mf_800": MF(n_latent_factor=800),
+        "my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
         }
 

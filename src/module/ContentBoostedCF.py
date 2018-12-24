@@ -12,12 +12,12 @@ from itertools import product
 from sklearn.metrics.pairwise import cosine_similarity
 
 from src.module import util
-from src.module.ContentBasedCF import ContentBasedCF as PureContentBasedModel
 
 
 class ContentBoostedCF:
     
-    def __init__(self, knn=50):
+    def __init__(self, pure_content_predictor, knn=50):
+        self.pure_content_predictor = pure_content_predictor
         self.knn = knn
 
     def fit(self, user_ids, item_ids, ratings, item_attributes, user_attributes='NotUse'):
@@ -169,9 +169,7 @@ class ContentBoostedCF:
         
     
     def _fit_pure_content_predictor(self):        
-        pure_content_predictor = PureContentBasedModel()
-        pure_content_predictor.fit(self.user_ids, self.item_ids, self.ratings, item_attributes=self.item_attributes)
-        self.pure_content_predictor = pure_content_predictor
+        self.pure_content_predictor.fit(self.user_ids, self.item_ids, self.ratings, item_attributes=self.item_attributes)
 
     def _get_v(self, u, i):
         try:
@@ -234,20 +232,19 @@ class ContentBoostedCF:
 
 
 if __name__ == '__main__':
-    from src.module.ContentBoostedCF import ContentBoostedCF
     
-    # Usage
-    ## 下記のデータは明らかに、item_attribute = [負の影響, 影響なし, 正の影響]になっている。
     """
     # それなりの大量データでの結果
     from src.module.ContentBoostedCF import ContentBoostedCF
+    from src.module.MF import MF
+
     import numpy as np
     user_ids = np.random.choice(range(100), size=1000)
     item_ids = np.random.choice(range(500), size=1000)
     ratings  = np.random.choice(range(1,6), size=1000)
     item_attributes = {i:np.random.choice([0,1], size=18) for i in range(5000)}
 
-    CBCF = ContentBoostedCF()
+    CBCF = ContentBoostedCF(pure_content_predictor=MF(n_latent_factor=0))
     CBCF.fit(user_ids, item_ids, ratings, item_attributes)
 
     user_ids = np.random.choice(range(100), size=1000)
@@ -256,17 +253,10 @@ if __name__ == '__main__':
     CBCF.predict(user_ids, item_ids, item_attributes) 
     self = CBCF
     
-    
-    # ぺぺぺぺ
-    from src.module.ContentBoostedCF import ContentBoostedCF
-    user_ids = train_user_ids
-    item_ids = train_item_ids
-    ratings  = train_values
-    self = ContentBoostedCF()
-    self.fit(user_ids, item_ids, ratings, item_attributes)
-
-
     """
+
+    # Usage
+    ## 下記のデータは明らかに、item_attribute = [負の影響, 影響なし, 正の影響]になっている。
 
     user_ids = [1,1,1,1,5,5,7,8]
     item_ids = [1,2,3,4,2,4,1,4]
@@ -282,12 +272,15 @@ if __name__ == '__main__':
             99:[0,1,0], #影響なしのみ
             }
 
-    self = ContentBoostedCF()
+    from src.module.ContentBoostedCF import ContentBoostedCF
+    from src.module.MF import MF
+
+    self = ContentBoostedCF(pure_content_predictor=MF(n_latent_factor=0))
     self.fit(user_ids, item_ids, ratings, item_attributes)
 
     self.predict(user_ids, item_ids)
     self.predict([1,1,1,1], [96,97,98,99]) # 新しいitem_idの予測
-    self.predict([5,5,5,5], [1,2,3,4]) # 普通のuser_idの全item_idの予測
+    self.predict([5,5,5,5], [1,2,3,4]) # 学習済みのuser_idの全item_idの予測
     self.predict([7,7,7,7], [1,2,3,4]) # マイナーuser_idの全item_idの予測
     self.predict([8,8,8,8], [1,2,3,4]) # マイナーuser_idの全item_idの予測
     self.predict([99,99], [1,2]) # 新しいuser_idの予測は平均値

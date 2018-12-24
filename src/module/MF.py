@@ -17,7 +17,7 @@ from src.module import util
 
 class MF:
 
-    def __init__(self, n_latent_factor=100, learning_rate=0.01, 
+    def __init__(self, n_latent_factor=200, learning_rate=0.01, 
                  regularization_weight=0.02, n_epochs=100, 
                  global_bias=True, id_bias=True,
                  verbose=False, random_seed=None):
@@ -291,10 +291,13 @@ if __name__ == '__main__':
     
     #######################################
     # library Suprise と比較して同様の結果を出力できるかの確認。
-    from src.MF import MF
+    from src.module.MF import MF
     n_epochs = 10000
     mf = MF(n_latent_factor=1, learning_rate=0.005, regularization_weight=0.02, n_epochs=n_epochs, verbose=True)
     mf.fit(user_ids, item_ids, ratings, )
+    
+    # 新しいIDの推定確認
+    mf.predict([99,1,99], [1,99,99])
     
     # compair the result with the libraray 'Suprise'
     from surprise import SVD # SVD algorithm
@@ -309,7 +312,7 @@ if __name__ == '__main__':
 
     # 目視確認
     for me, sur in zip(mf.predict(out_sample_user_ids, out_sample_item_ids), svd.predict(out_sample_user_ids, out_sample_item_ids)):
-        print(me, sur, '%.5f'%((me-sur)/sur))
+        print(me, sur, '%.5f'%((me-sur)/sur))        
     
     #######################################
     # 明らかにattributeの影響を受けているデータに対して、適切に学習ができるか？
@@ -326,7 +329,7 @@ if __name__ == '__main__':
     rating_on_only_attribute = lambda u,i: (user_attribute[u]*answer_user_attr_coef).sum() + (item_attribute[i]*answer_item_attr_coef).sum()
     ratings = [rating_on_only_attribute(u,i) for u,i in zip(user_ids, item_ids)]
     
-    from src.MF import MF
+    from src.module.MF import MF
     mf = MF(n_latent_factor=0, learning_rate=0.010, 
             regularization_weight=0.0, n_epochs=100, 
             global_bias=False, id_bias=False, verbose=True)
@@ -335,3 +338,5 @@ if __name__ == '__main__':
     print(mf.a_i, answer_item_attr_coef)
     for p,a in zip(mf.predict(user_ids, item_ids, user_attribute, item_attribute), ratings):
         print(p,a,(p-a)/(abs(a)+0.00001))
+        
+    

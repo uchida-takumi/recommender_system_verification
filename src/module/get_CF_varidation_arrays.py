@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import re
+
 def get_CF_varidation_arrays(
                             train_user_ids, train_item_ids, train_values
                            ,test_user_ids, test_item_ids, test_values
@@ -11,14 +12,22 @@ def get_CF_varidation_arrays(
                            ,remove_still_interaction_from_test=False
                            ,topN=[5,10], random_seed=None, **fit_args):
     """
-    INPUTs:
+     This is a inplementation of (*1) which define a metric for 
+    Top-N Recommendation Tasks.    
+    
+    (*1) Paolo 2010: Performance of Recommender Algorithms on Top-N Recommendation Tasks
+    
+    INPUT:
+    -------------------------------
         user_ids, item_ids, values [array like]: 
-            dataset of interactions.
+            dataset for train.
+        test_user_ids, test_item_ids, test_values [array like]: 
+            dataset for test.
         model : 
             CF model which has self.fit(user_ids, item_ids, values) and self.predict(user_ids, item_ids).
-        good_score_threshold [numeric](*1):
+        good_score_threshold [numeric]:
             to aggregate recall and precision for Collaborative Filtering.
-        n_random_selected_item_ids [int](*1):
+        n_random_selected_item_ids [int]:
             to aggregate recall and precision for Collaborative Filtering.
         remove_still_interaction_from_test [True/False]:
             This should set False, if you want to run along with (*1).
@@ -28,27 +37,44 @@ def get_CF_varidation_arrays(
         random_seed [int]:
             random seed values.
         
-        (*1) [Paolo 2010: Performance of Recommender Algorithms on Top-N Recommendation Tasks]
 
             
-    RETURNs:
+    RETURN:
+    -------------------------------
         the dictionary involve arrayes which are needed to aggrigate MAE, RMSE, recall, precision. 
 
     
-    EXAMPLEs:
+    EXAMPLE:
+    -------------------------------
+        import numpy as np
+        import re
+        
+        # set data
         user_ids = np.random.choice(range(100), size=500)
         item_ids = np.random.choice(range(20),  size=500)
         values   = np.random.choice(range(6),   size=500)
-        model = MFCF()
-        topN = [5]
-        
-        result_dict = get_CF_metrices_part( train_user_ids, train_item_ids, train_values
+
+        test_user_ids = np.random.choice(range(100), size=500)
+        test_item_ids = np.random.choice(range(20),  size=500)
+        test_values   = np.random.choice(range(6),   size=500)
+
+        # set simple model    
+        class random_model:
+            def fit(self, user_ids, item_ids, values):
+                pass
+            def predict(self, user_ids, item_ids):
+                return [np.random.rand() for u in user_ids]
+    
+        model = random_model()        
+
+        result_dict = get_CF_varidation_arrays(
+                                            user_ids, item_ids, values
                                            ,test_user_ids, test_item_ids, test_values
                                            ,model
                                            ,good_score_threshold=5
-                                           ,n_random_selected_item_ids=10
+                                           ,n_random_selected_item_ids=1000
                                            ,remove_still_interaction_from_test=False
-                                           ,topN=topN
+                                           ,topN=[5,10,15]
                                            ,random_seed=1
                                            )
         
@@ -134,7 +160,7 @@ def get_CF_varidation_arrays(
             "test_item_ids": test_item_ids,
             "test_values": test_values,
             "predicted_values": model.predict(test_user_ids, test_item_ids, **fit_args),
-            "fitted_model": model,
+            #"fitted_model": model,
             "test_good_user_ids": test_good_user_ids,
             "test_good_item_ids": test_good_item_ids,
             "test_good_values": test_good_values,
@@ -159,10 +185,16 @@ def get_CF_varidation_arrays(
 
 
 if __name__ == '__main__':
+    import numpy as np
+    import re
     # INPUTs
     user_ids = np.random.choice(range(100), size=500)
     item_ids = np.random.choice(range(20),  size=500)
     values   = np.random.choice(range(6),   size=500)
+
+    test_user_ids = np.random.choice(range(100), size=500)
+    test_item_ids = np.random.choice(range(20),  size=500)
+    test_values   = np.random.choice(range(6),   size=500)
 
     # set simple model    
     class random_model:
@@ -172,14 +204,15 @@ if __name__ == '__main__':
             return [np.random.rand() for u in user_ids]
 
     model = random_model()        
-    topN = 5
     
-    result_dict = get_CF_varidation_arrays(user_ids, item_ids, values, model
-                                       ,test_size_rate=0.2
+    result_dict = get_CF_varidation_arrays(
+                                        user_ids, item_ids, values
+                                       ,test_user_ids, test_item_ids, test_values
+                                       ,model
                                        ,good_score_threshold=5
                                        ,n_random_selected_item_ids=1000
                                        ,remove_still_interaction_from_test=False
-                                       ,topN=topN
+                                       ,topN=[5,10,15]
                                        ,random_seed=1
                                        )
     
