@@ -43,7 +43,7 @@ class RandomWalkCF:
         R = pd.pivot_table(Rating, 'values', 'user_ids', 'item_ids', aggfunc='max').fillna(0)
 
         #S = adjusted_cosine_similarity(R)
-        S = cosine_similarity(R)
+        S = cosine_similarity(R.T)
         '''
         for i in range(S.shape[0]):
             S[i,i] = 0
