@@ -8,6 +8,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 import itertools
+from sklearn.metrics.pairwise import cosine_similarity
 
 class RandomWalkCF:
     def __init__(self):
@@ -41,7 +42,14 @@ class RandomWalkCF:
         Rating = pd.DataFrame({'user_ids':user_ids, 'item_ids':item_ids, 'values':values})
         R = pd.pivot_table(Rating, 'values', 'user_ids', 'item_ids', aggfunc='max').fillna(0)
 
-        S = adjusted_cosine_similarity(R)
+        #S = adjusted_cosine_similarity(R)
+        S = cosine_similarity(R)
+        '''
+        for i in range(S.shape[0]):
+            S[i,i] = 0
+        '''
+        S = scale_S_as_probabilities(S)
+
         m = S.shape[0]
 
         P = list()
@@ -107,7 +115,6 @@ class RandomWalkCF:
         '''
         
 
-
 def adjusted_cosine_similarity(R):
     m = R.shape[1]
     R_np = R.values
@@ -150,6 +157,9 @@ def adjusted_cosine_similarity(R):
     for i,j,sim in map(S_ij, comb):
         S[i,j], S[j,i] = sim, sim
     
+    return S
+
+def scale_S_as_probabilities(S):    
     ''' 論文より抜粋
     Common approaches produce symmetric 
     similarity matrices; but we destroy symmetry while computing
@@ -200,3 +210,4 @@ if __name__ == '__main__':
     rwcf.predict([999999],[1])
     rwcf.predict([1],[999999])    
     rwcf.predict([999999],[99999999])
+    rwcf.predict([1,2,2],[1,1,999])

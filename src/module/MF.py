@@ -17,8 +17,8 @@ from src.module import util
 
 class MF:
 
-    def __init__(self, n_latent_factor=200, learning_rate=0.01, 
-                 regularization_weight=0.02, n_epochs=100, 
+    def __init__(self, n_latent_factor=200, learning_rate=0.005, 
+                 regularization_weight=0.02, n_epochs=20, 
                  global_bias=True, id_bias=True,
                  verbose=False, random_seed=None):
         """
@@ -232,9 +232,9 @@ class MF:
             
             # Update attribute coefficient
             if self.fit_user_attributes:
-                self.a_u += self.learning_rate * (self.UserAttr[u] * e - self.regularization_weight * self.a_u)
+                self.a_u += self.learning_rate * self.UserAttr[u] * (e - self.regularization_weight * self.a_u)
             if self.fit_item_attributes:
-                self.a_i += self.learning_rate * (self.ItemAttr[i] * e - self.regularization_weight * self.a_i)
+                self.a_i += self.learning_rate * self.ItemAttr[i] * (e - self.regularization_weight * self.a_i)
 
             # Update biases
             if self.id_bias:
@@ -268,14 +268,14 @@ class MF:
 
         # attributes 
         if (self.fit_user_attributes) and (user_attr is not None):
-            prediction += (self.a_u * user_attr).sum()
+            prediction += (self.a_u * user_attr).mean()
         if (self.fit_item_attributes) and (item_attr is not None):
-            prediction += (self.a_i * item_attr).sum()
+            prediction += (self.a_i * item_attr).mean()
         
         # latent factor
         if self.n_latent_factor:
             if (u is not None) and (i is not None):
-                prediction += self.P[u, :].dot(self.Q[i, :].T)
+                prediction += np.dot(self.P[u, :], self.Q[i, :])
 
         return prediction
     

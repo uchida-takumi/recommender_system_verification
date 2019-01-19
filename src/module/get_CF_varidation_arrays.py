@@ -88,16 +88,7 @@ def get_CF_varidation_arrays(
     np.random.seed(seed=random_seed)
     
     # ---- Training ----
-    # 高速化のために、一部の手法については学習idを限定する。
-    # model.__class__=='src.module.ContentBoostedCF.ContentBoostedCF'については、予測対象に含まれないIDを学習する必要はない。
-    # よってIDをフィルタリングする。
-    if re.match('^.*ContentBoostedCF.*$', str(model.__class__)):
-        bo_user_ids = np.in1d(train_user_ids, test_user_ids)
-        #bo_item_ids = np.in1d(train_item_ids, test_item_ids)
-        bo_ids = bo_user_ids #& bo_item_ids
-        model.fit(train_user_ids[bo_ids], train_item_ids[bo_ids], train_values[bo_ids], **fit_args)        
-    else:
-        model.fit(train_user_ids, train_item_ids, train_values, **fit_args)
+    model.fit(train_user_ids, train_item_ids, train_values, **fit_args)
         
     # ---- Testing ----
     ## get recall and precision

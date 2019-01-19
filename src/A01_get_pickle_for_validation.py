@@ -46,7 +46,7 @@ random.seed(random_seed)
 np.random.seed(random_seed)
 
 # set validation parameteres
-train_test_days = 90
+train_test_days = 7
 n_hold = 10
 topN = [5,10,20]
 
@@ -85,7 +85,7 @@ values   = rating['Rating'].values
 one_day_sec = 60 * 60 * 24
 max_seconds = rating.Timestamp.max()
 
-seps = sorted([max_seconds - (i) * one_day_sec * train_test_days for i in range(n_hold+2)])
+seps = sorted([max_seconds - i * one_day_sec * train_test_days for i in range(n_hold+2)])
 sep_indexs = [(seps[i-1]<=rating.Timestamp)&(rating.Timestamp<seps[i]) for i in range(1, n_hold+2)]
 
 
@@ -112,23 +112,23 @@ my_contentbased = MF(n_latent_factor=0)
 my_contentboosted = ContentBoostedCF(pure_content_predictor=my_contentbased)
 
 models = {
-        #"svd": svd,
+        "svd": svd,
         #"nmf": nmf,
         #"slopeone": slopeone,
-        #"userbased": userbased,
-        #"itembased": itembased,
+        "userbased": userbased,
+        "itembased": itembased,
         #"coclustering": coclustering,
-        #"baseline": baseline,
-        #"randommodel": randommodel,
+        "baseline": baseline,
+        "randommodel": randommodel,
         "two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
         "two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
         "two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
         "two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
         "randomwalk": randomwalk,
-        #"svd_item_attributes": svd_item_attributes,
-        "my_mf_200": MF(n_latent_factor=200),
-        "my_mf_400": MF(n_latent_factor=400),
-        "my_mf_800": MF(n_latent_factor=800),
+        "mv_item_attributes": svd_item_attributes,
+        #"my_mf_050": MF(n_latent_factor=50),
+        "my_mf_100": MF(n_latent_factor=100),
+        #"my_mf_200": MF(n_latent_factor=200),
         "my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
         }
