@@ -46,7 +46,7 @@ random.seed(random_seed)
 np.random.seed(random_seed)
 
 # set validation parameteres
-train_test_days = 7
+train_test_days = 14
 n_hold = 10
 topN = [5,10,20]
 
@@ -125,7 +125,7 @@ models = {
         "two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
         "two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
         "randomwalk": randomwalk,
-        "ms_item_attributes": svd_item_attributes,
+        #"mv_item_attributes": svd_item_attributes,
         "my_mf_050": MF(n_latent_factor=50),
         "my_mf_100": MF(n_latent_factor=100),
         "my_mf_200": MF(n_latent_factor=200),

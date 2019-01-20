@@ -9,10 +9,21 @@ This code is based on :
 
 import numpy as np
 from itertools import product
-from sklearn.metrics.pairwise import cosine_similarity
 
 from src.module import util
 
+""" プログラミング用
+from src.module.ContentBoostedCF import ContentBoostedCF
+from src.module.MF import MF
+
+user_ids = user_ids[sep_indexs[0]]
+item_ids = item_ids[sep_indexs[0]]
+ratings   = values[sep_indexs[0]]
+
+self = ContentBoostedCF(pure_content_predictor=MF(n_latent_factor=50))
+
+user_attributes='NotUse'
+"""
 
 class ContentBoostedCF:
     
@@ -141,10 +152,11 @@ class ContentBoostedCF:
         for u_i,r in self.samples.items():
             R[u_i[0],u_i[1]] = r
         
-        delta_R = R - R.mean(axis=1)[:,None]
-        
-        self.P = cosine_similarity(delta_R, delta_R)
+        self.P = util.pearson_correlation_from_R(R)
     
+    def _fit_pure_content_predictor(self):        
+        self.pure_content_predictor.fit(self.user_ids, self.item_ids, self.ratings, item_attributes=self.item_attributes)
+
     def _fit_V(self):
         """
         create pseudo user-rating matrix whose dimmention is (user_id, item_id)
@@ -158,7 +170,12 @@ class ContentBoostedCF:
         _user_ids = [_[0] for _ in user_item_ids]
         _item_ids = [_[1] for _ in user_item_ids]
         
+        
+        pure_content_predictions = self.pure_content_predictor.predict_high_speed_but_no_preprocess(_user_ids, _item_ids, item_attributes=self.item_attributes)
+        
+        """ 高速化の為に上に変更したが、下の記述のほうが一般性は高い。
         pure_content_predictions = self.pure_content_predictor.predict(_user_ids, _item_ids, item_attributes=self.item_attributes)
+        """
         
         V = np.zeros(shape=(n_user_ids, n_item_ids))
         for u,i,p in zip(_user_ids, _item_ids, pure_content_predictions):
@@ -168,9 +185,6 @@ class ContentBoostedCF:
         self.V = V
         
     
-    def _fit_pure_content_predictor(self):        
-        self.pure_content_predictor.fit(self.user_ids, self.item_ids, self.ratings, item_attributes=self.item_attributes)
-
     def _get_v(self, u, i):
         try:
             return self.V[u, i]

@@ -10,6 +10,16 @@ import pandas as pd
 import itertools
 from sklearn.metrics.pairwise import cosine_similarity
 
+
+""" プログラミング用
+user_ids = user_ids[sep_indexs[0]]
+item_ids = item_ids[sep_indexs[0]]
+values   = values[sep_indexs[0]]
+alpha=0.80
+beta=0.99
+self = RandomWalkCF()
+"""
+
 class RandomWalkCF:
     def __init__(self):
         """
@@ -44,10 +54,9 @@ class RandomWalkCF:
 
         #S = adjusted_cosine_similarity(R)
         S = cosine_similarity(R.T)
-        '''
         for i in range(S.shape[0]):
             S[i,i] = 0
-        '''
+
         S = scale_S_as_probabilities(S)
 
         m = S.shape[0]
@@ -180,7 +189,7 @@ if __name__ == '__main__':
     R = np.random.choice(range(1,6), size=(n_user,n_item))
     # Usage
     user_ids = np.random.choice(range(n_user), size=500)
-    item_ids = np.random.choice(range(n_item),  size=500)
+    item_ids = np.random.choice(range(n_item), size=500)
     values   = np.array([R[u,i] for u,i in zip(user_ids, item_ids)])
 
     # set simple model    

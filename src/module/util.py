@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pandas as pd
+import numpy as np
 
 def read_ml20m_data():
     # set file path
@@ -124,8 +125,18 @@ def get_key_from_val(dict_, val, unknown=None):
     else:
         return unknown
 
+from sklearn.metrics.pairwise import cosine_similarity
+def pearson_correlation_from_R(R, **key_args__cosine_similarity):
+    R_np = np.array(R)
 
-
+    no_0_mean = lambda array: array[array>0].mean()
+    R_np_mean = np.apply_along_axis(no_0_mean, axis=1, arr=R_np)[:, None]
+    
+    # R_np - R_np_mean ignoring 0
+    diff_R = R_np - R_np_mean
+    diff_R[R_np==0] = 0
+    
+    return cosine_similarity(diff_R, **key_args__cosine_similarity)
 
 if __name__=='__main__':
     dict_ = {'aa':123}

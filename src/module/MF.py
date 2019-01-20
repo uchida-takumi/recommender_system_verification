@@ -194,12 +194,44 @@ class MF:
         for u,i in zip(user_ids, item_ids):
             tf_u = self.user_ids_transformer.transform([u], unknown=None)[0]
             tf_i = self.item_ids_transformer.transform([i], unknown=None)[0]
+
             user_attr = user_attributes.get(u, None)
+            if (user_attr is None) and (self.fit_user_attributes):
+                user_attr = self.UserAttr[tf_u]
+
             item_attr = item_attributes.get(i, None)
+            if (item_attr is None) and (self.fit_item_attributes):
+                item_attr = self.ItemAttr[tf_i]
+
             results.append(self._predict(tf_u, tf_i, user_attr, item_attr))
 
         return np.array(results)
-                
+    
+    def predict_high_speed_but_no_preprocess(self, user_ids, item_ids, user_attributes=None, item_attributes=None):
+        """ Don't Use it. This is for a specific use.
+        user_ids = [0,0,1,2,]
+        item_ids = [2,4,4,4,]
+        """
+        
+        tf_us = self.user_ids_transformer.transform(user_ids, unknown=None)
+        tf_is = self.item_ids_transformer.transform(item_ids, unknown=None)
+        
+        a_u, a_i, pq = 0, 0, 0
+
+        b = self.b
+        b_u = self.b_u[tf_us]
+        b_i = self.b_i[tf_is]
+        
+        if (self.fit_user_attributes) and (user_attributes is not None):
+            attributes_array = np.array([user_attributes.get(u, self.UserAttr[tu]) for u,tu in zip(user_ids, tf_us)])
+            a_u = (self.a_u * attributes_array).mean(axis=1)
+        if (self.fit_item_attributes) and (item_attributes is not None):
+            attributes_array = np.array([item_attributes.get(i, self.ItemAttr[ti]) for i,ti in zip(item_ids, tf_is)])
+            a_i = (self.a_i * attributes_array).mean(axis=1)
+        if self.n_latent_factor:
+            pq = (self.P[tf_us, :] * self.Q[tf_is, :]).sum(axis=1)
+        
+        return b + b_u + b_i + a_u + a_i + pq
 
     def mse(self):
         """
@@ -232,9 +264,9 @@ class MF:
             
             # Update attribute coefficient
             if self.fit_user_attributes:
-                self.a_u += self.learning_rate * self.UserAttr[u] * (e - self.regularization_weight * self.a_u)
+                self.a_u += self.learning_rate * self.UserAttr[u] * self.UserAttr[i].mean() * (e - self.regularization_weight * self.a_u)
             if self.fit_item_attributes:
-                self.a_i += self.learning_rate * self.ItemAttr[i] * (e - self.regularization_weight * self.a_i)
+                self.a_i += self.learning_rate * self.ItemAttr[i] * self.ItemAttr[i].mean() * (e - self.regularization_weight * self.a_i)
 
             # Update biases
             if self.id_bias:
@@ -275,7 +307,7 @@ class MF:
         # latent factor
         if self.n_latent_factor:
             if (u is not None) and (i is not None):
-                prediction += np.dot(self.P[u, :], self.Q[i, :])
+                prediction += np.dot(self.P[u, :], self.Q[i, :].T)
 
         return prediction
     

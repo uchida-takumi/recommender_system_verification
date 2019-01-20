@@ -7,6 +7,7 @@ import re
 import numpy as np
 import pandas as pd
 from collections import Counter
+from itertools import product
 
 
 def main():
@@ -23,6 +24,9 @@ def main():
 
 
 def parse(pickle_file):
+    """
+    pickle_file = pickle_file_list[0]
+    """
     model_name, hold = 'nothing', 'nothing'
     for file_name_part in pickle_file.split('__'):
         if re.match('model_name=', file_name_part):
@@ -84,111 +88,20 @@ def parse(pickle_file):
     vr['test_values'] = np.array(vr['test_values'])
     vr['predicted_values'] = np.array(vr['predicted_values'])
     vr['test_good_hit_result'] = {k:np.array(v) for k,v in vr['test_good_hit_result'].items()}
-    
-    test_values = vr['test_values']
-    predicted_values = vr['predicted_values']
-    test_good_hit_result = vr['test_good_hit_result']
-    
-    metrics_all_ids = get_metrix(test_values, predicted_values, test_good_hit_result)
         
-    def common_process(bo_index, bo_hit_index):
-        test_values, predicted_values = vr['test_values'][bo_index], vr['predicted_values'][bo_index]
-        test_good_hit_result = {k:v[bo_hit_index] for k,v in vr['test_good_hit_result'].items()}
-        return get_metrix(test_values, predicted_values, test_good_hit_result)
-    
     # --- Validation on head_item_ids
-    bo_index = np.in1d(vr['test_item_ids'], head_item_ids)
-    bo_hit_index = np.in1d(vr['test_good_item_ids'], head_item_ids)
-    metrics_head_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on tail_item_ids
-    bo_index = np.in1d(vr['test_item_ids'], tail_item_ids)
-    bo_hit_index = np.in1d(vr['test_good_item_ids'], tail_item_ids)
-    metrics_tail_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on no_trained_item_ids
-    bo_index = np.in1d(vr['test_item_ids'], no_trained_item_ids)
-    bo_hit_index = np.in1d(vr['test_good_item_ids'], no_trained_item_ids)
-    metrics_no_trained_item_ids = common_process(bo_index, bo_hit_index)
-
-    #-------------------------#
-
-    # --- Validation on head_user_ids
-    bo_index = np.in1d(vr['test_user_ids'], head_user_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], head_user_ids)
-    metrics_head_user_ids = common_process(bo_index, bo_hit_index)
-    
-    # --- Validation on tail_user_ids
-    bo_index = np.in1d(vr['test_user_ids'], tail_user_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], tail_user_ids)
-    metrics_tail_user_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on no_trained_user_ids
-    bo_index = np.in1d(vr['test_user_ids'], no_trained_user_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], no_trained_user_ids)
-    metrics_no_trained_user_ids = common_process(bo_index, bo_hit_index)
-
-    #-------------------------#
-
-    # --- Validation on head_user_ids & head_item_ids
-    _user_ids, _item_ids = head_user_ids, head_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_head_user_ids__head_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on head_user_ids & tail_item_ids
-    _user_ids, _item_ids = head_user_ids, tail_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_head_user_ids__tail_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on head_user_ids & no_trained_item_ids
-    _user_ids, _item_ids = head_user_ids, no_trained_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_head_user_ids__no_trained_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on tail_user_ids & head_item_ids
-    _user_ids, _item_ids = tail_user_ids, head_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_tail_user_ids__head_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on tail_user_ids & tail_item_ids
-    _user_ids, _item_ids = tail_user_ids, tail_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_tail_user_ids__tail_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on tail_user_ids & no_trained_item_ids
-    _user_ids, _item_ids = tail_user_ids, no_trained_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_tail_user_ids__no_trained_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on no_trained_user_ids & head_item_ids
-    _user_ids, _item_ids = no_trained_user_ids, head_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_no_trained_user_ids__head_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on no_trained_user_ids & tail_item_ids
-    _user_ids, _item_ids = no_trained_user_ids, tail_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_no_trained_user_ids__tail_item_ids = common_process(bo_index, bo_hit_index)
-
-    # --- Validation on no_trained_user_ids & no_trained_item_ids
-    _user_ids, _item_ids = no_trained_user_ids, no_trained_item_ids
-    bo_index = np.in1d(vr['test_user_ids'], _user_ids) & np.in1d(vr['test_item_ids'], _item_ids)
-    bo_hit_index = np.in1d(vr['test_good_user_ids'], _user_ids) & np.in1d(vr['test_good_item_ids'], _item_ids)
-    metrics_no_trained_user_ids__no_trained_item_ids = common_process(bo_index, bo_hit_index)
-
+    dict_user_ids = dict(head=head_user_ids, tail=tail_user_ids, no_tarin=no_trained_user_ids, all=None)
+    dict_item_ids = dict(head=head_item_ids, tail=tail_item_ids, no_train=no_trained_item_ids, all=None)
+    result_metrics = list()
+    for user_key, item_key in product(dict_user_ids, dict_item_ids):
+        metrics = common_process(vr, dict_user_ids[user_key], dict_item_ids[item_key])
+        metrics['model_name'] = "user={}__item={}".format(user_key, item_key)
+        result_metrics.append(metrics)
 
     # --- RETURN ---
-    def wrapper(dict_metrix):
+    def wrapper(dict_metric):
         return convert_df(
-                        dict_metrix
+                        dict_metric
                         ,model_name=model_name
                         ,random_seed=random_seed
                         ,topN=topN
@@ -219,19 +132,9 @@ def parse(pickle_file):
                         ,n_sample_no_trained_user_ids_in_test=n_sample_no_trained_user_ids_in_test
                         ,n_unique_no_trained_user_ids_in_test=n_unique_no_trained_user_ids_in_test
                           )
-    
-    return_metrics = [
-            'metrics_all_ids', 
-            'metrics_head_item_ids', 'metrics_tail_item_ids', 'metrics_no_trained_item_ids', 
-            'metrics_head_user_ids', 'metrics_tail_user_ids', 'metrics_no_trained_user_ids',
-            'metrics_head_user_ids__head_item_ids', 'metrics_head_user_ids__tail_item_ids', 'metrics_head_user_ids__no_trained_item_ids',
-            'metrics_tail_user_ids__head_item_ids', 'metrics_tail_user_ids__tail_item_ids', 'metrics_tail_user_ids__no_trained_item_ids',
-            'metrics_no_trained_user_ids__head_item_ids', 'metrics_no_trained_user_ids__tail_item_ids', 'metrics_no_trained_user_ids__no_trained_item_ids',            
-            ]
     frame = []
-    for metrics_ in return_metrics:
-        df_ = wrapper(eval(metrics_))
-        df_['test_ids'] = metrics_
+    for metrics in result_metrics:
+        df_ = wrapper(metrics)
         frame.append(df_)
     
     return pd.concat(frame, axis=0, ignore_index=True)
@@ -276,6 +179,26 @@ def convert_df(dict_metrix, **keyargs):
         except:
             df_.loc[0, col] = str(val)            
     return df_
+
+def common_process(vr, user_ids=None, item_ids=None):
+    bo_index     = np.array([True]*vr['test_item_ids'].shape[0])
+    bo_hit_index = np.array([True]*vr['test_good_item_ids'].shape[0])
+    if user_ids is not None:
+        bo_index     &= np.in1d(vr['test_user_ids'], user_ids)
+        bo_hit_index &= np.in1d(vr['test_good_user_ids'], user_ids)
+    if item_ids is not None:
+        bo_index     &= np.in1d(vr['test_item_ids'], item_ids)
+        bo_hit_index &= np.in1d(vr['test_good_item_ids'], item_ids)
+        
+    test_values, predicted_values = vr['test_values'][bo_index], vr['predicted_values'][bo_index]
+    test_good_hit_result = {k:v[bo_hit_index] for k,v in vr['test_good_hit_result'].items()}
+    
+    return_df = get_metrix(test_values, predicted_values, test_good_hit_result)
+    
+    return_df['test_sample_size']     = bo_index.sum()
+    return_df['test_hit_sample_size'] = bo_hit_index.sum()
+
+    return return_df
 
 
 if __name__ == '__main__':
