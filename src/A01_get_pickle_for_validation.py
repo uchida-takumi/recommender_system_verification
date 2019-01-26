@@ -104,7 +104,7 @@ two_way_aspect_Z010 = two_way_aspect_model(item_attributes=item_attributes, Z=10
 two_way_aspect_Z020 = two_way_aspect_model(item_attributes=item_attributes, Z=20,)
 
 randomwalk = RandomWalkCF()
-svd_item_attributes = MF()
+mf_item_attributes = MF(n_latent_factor=200)
 
 
 #my_contentbased = ContentBasedCF()
@@ -125,10 +125,11 @@ models = {
         "two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
         "two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
         "randomwalk": randomwalk,
-        #"mv_item_attributes": svd_item_attributes,
+        "mf_item_attributes_200": mf_item_attributes,
         "my_mf_050": MF(n_latent_factor=50),
         "my_mf_100": MF(n_latent_factor=100),
         "my_mf_200": MF(n_latent_factor=200),
+        "my_mf_400": MF(n_latent_factor=400),
         "my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
         }
@@ -154,7 +155,7 @@ def get_varidation_arrays(arg_dict):
     test_user_ids = user_ids[sep_indexs[i+1]]
     test_item_ids = item_ids[sep_indexs[i+1]]
     test_values   = values[sep_indexs[i+1]]
-    if model_name in ['svd_item_attributes', 'my_contentbased', 'my_contentboosted']:
+    if model_name in ['mf_item_attributes', 'my_contentbased', 'my_contentboosted']:
         validation_arrays =  get_CF_varidation_arrays(
                     train_user_ids, train_item_ids, train_values,
                     test_user_ids, test_item_ids, test_values,
