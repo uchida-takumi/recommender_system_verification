@@ -31,6 +31,8 @@ def parse(pickle_file):
     for file_name_part in pickle_file.split('__'):
         if re.match('model_name=', file_name_part):
             model_name = file_name_part.split('=')[1]
+        if re.match('train_test_days=', file_name_part):
+            train_test_days = file_name_part.split('=')[1]
         if re.match('hold=', file_name_part):
             hold = file_name_part.split('=')[1].replace('.pickle', '')
 
@@ -95,7 +97,7 @@ def parse(pickle_file):
     result_metrics = list()
     for user_key, item_key in product(dict_user_ids, dict_item_ids):
         metrics = common_process(vr, dict_user_ids[user_key], dict_item_ids[item_key])
-        metrics['model_name'] = "user={}__item={}".format(user_key, item_key)
+        metrics['segment'] = "u={}&i={}".format(user_key, item_key)
         result_metrics.append(metrics)
 
     # --- RETURN ---
@@ -104,6 +106,7 @@ def parse(pickle_file):
                         dict_metric
                         ,model_name=model_name
                         ,random_seed=random_seed
+                        ,train_test_days=train_test_days
                         ,topN=topN
                         ,remove_still_interaction_from_test=remove_still_interaction_from_test
                         ,hold=hold
