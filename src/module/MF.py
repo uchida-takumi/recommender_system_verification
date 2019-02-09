@@ -115,7 +115,7 @@ class MF:
                 self.learning_rate *= 0.5
                 stop_cnt += 1
             # if stop_cnt is more than a threshold, stop training.
-            if stop_cnt > 30:
+            if stop_cnt > 10:
                 break
             
             before_mse = mse
@@ -312,7 +312,7 @@ class MF:
         return prediction
     
 
-if __name__ == '__main__':
+if __name__ == 'some tests':
     # Usage
     user_ids = [1,1,1,1,5,5,8,8]
     item_ids = [1,2,3,4,2,4,8,9]
