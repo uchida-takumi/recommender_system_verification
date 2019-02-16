@@ -55,7 +55,7 @@ def parse(pickle_file):
     no_trained_user_ids  = np.unique(vr['test_user_ids'][~np.in1d(vr['test_user_ids'], np.unique(vr['train_user_ids']))])
 
 
-    # --- set the numbers of id
+    # --- set the numbers of id ---
     def count_unique_in(array, items):
         """
         arrayの中に含まれるitemsの数とユニーク数を返却する。
@@ -67,31 +67,12 @@ def parse(pickle_file):
         array_in = array[np.in1d(array, items)]
         return array_in.size, len(set(array_in))
     
-    n_sample_head_item_ids_in_train, n_unique_head_item_ids_in_train = count_unique_in(vr['train_item_ids'], head_item_ids)
-    n_sample_tail_item_ids_in_train, n_unique_tail_item_ids_in_train = count_unique_in(vr['train_item_ids'], tail_item_ids)
-    n_sample_no_trained_item_ids_in_train, n_unique_no_trained_item_ids_in_train = count_unique_in(vr['train_item_ids'], no_trained_item_ids)
-    
-    n_sample_head_item_ids_in_test, n_unique_head_item_ids_in_test = count_unique_in(vr['test_item_ids'], head_item_ids)
-    n_sample_tail_item_ids_in_test, n_unique_tail_item_ids_in_test = count_unique_in(vr['test_item_ids'], tail_item_ids)
-    n_sample_no_trained_item_ids_in_test, n_unique_no_trained_item_ids_in_test = count_unique_in(vr['test_item_ids'], no_trained_item_ids)
-
-    n_sample_head_user_ids_in_train, n_unique_head_user_ids_in_train = count_unique_in(vr['train_user_ids'], head_user_ids)
-    n_sample_tail_user_ids_in_train, n_unique_tail_user_ids_in_train = count_unique_in(vr['train_user_ids'], tail_user_ids)
-    n_sample_no_trained_user_ids_in_train, n_unique_no_trained_user_ids_in_train = count_unique_in(vr['train_user_ids'], no_trained_user_ids)
-    
-    n_sample_head_user_ids_in_test, n_unique_head_user_ids_in_test = count_unique_in(vr['test_user_ids'], head_user_ids)
-    n_sample_tail_user_ids_in_test, n_unique_tail_user_ids_in_test = count_unique_in(vr['test_user_ids'], tail_user_ids)
-    n_sample_no_trained_user_ids_in_test, n_unique_no_trained_user_ids_in_test = count_unique_in(vr['test_user_ids'], no_trained_user_ids)
-
-
-    #-------------------------#
-
     # --- Validation on all items and user ---
     vr['test_values'] = np.array(vr['test_values'])
     vr['predicted_values'] = np.array(vr['predicted_values'])
     vr['test_good_hit_result'] = {k:np.array(v) for k,v in vr['test_good_hit_result'].items()}
         
-    # --- Validation on head_item_ids
+    # --- Validation on [head, tail, no_train]
     dict_user_ids = dict(head=head_user_ids, tail=tail_user_ids, no_tarin=no_trained_user_ids, all=None)
     dict_item_ids = dict(head=head_item_ids, tail=tail_item_ids, no_train=no_trained_item_ids, all=None)
     result_metrics = list()
@@ -110,30 +91,6 @@ def parse(pickle_file):
                         ,topN=topN
                         ,remove_still_interaction_from_test=remove_still_interaction_from_test
                         ,hold=hold
-                        ,n_sample_head_item_ids_in_train=n_sample_head_item_ids_in_train
-                        ,n_unique_head_item_ids_in_train=n_unique_head_item_ids_in_train
-                        ,n_sample_tail_item_ids_in_train=n_sample_tail_item_ids_in_train
-                        ,n_unique_tail_item_ids_in_train=n_unique_tail_item_ids_in_train
-                        ,n_sample_no_trained_item_ids_in_train=n_sample_no_trained_item_ids_in_train
-                        ,n_unique_no_trained_item_ids_in_train=n_unique_no_trained_item_ids_in_train
-                        ,n_sample_head_item_ids_in_test=n_sample_head_item_ids_in_test
-                        ,n_unique_head_item_ids_in_test=n_unique_head_item_ids_in_test
-                        ,n_sample_tail_item_ids_in_test=n_sample_tail_item_ids_in_test
-                        ,n_unique_tail_item_ids_in_test=n_unique_tail_item_ids_in_test
-                        ,n_sample_no_trained_item_ids_in_test=n_sample_no_trained_item_ids_in_test
-                        ,n_unique_no_trained_item_ids_in_test=n_unique_no_trained_item_ids_in_test
-                        ,n_sample_head_user_ids_in_train=n_sample_head_user_ids_in_train
-                        ,n_unique_head_user_ids_in_train=n_unique_head_user_ids_in_train
-                        ,n_sample_tail_user_ids_in_train=n_sample_tail_user_ids_in_train
-                        ,n_unique_tail_user_ids_in_train=n_unique_tail_user_ids_in_train
-                        ,n_sample_no_trained_user_ids_in_train=n_sample_no_trained_user_ids_in_train
-                        ,n_unique_no_trained_user_ids_in_train=n_unique_no_trained_user_ids_in_train
-                        ,n_sample_head_user_ids_in_test=n_sample_head_user_ids_in_test
-                        ,n_unique_head_user_ids_in_test=n_unique_head_user_ids_in_test
-                        ,n_sample_tail_user_ids_in_test=n_sample_tail_user_ids_in_test
-                        ,n_unique_tail_user_ids_in_test=n_unique_tail_user_ids_in_test
-                        ,n_sample_no_trained_user_ids_in_test=n_sample_no_trained_user_ids_in_test
-                        ,n_unique_no_trained_user_ids_in_test=n_unique_no_trained_user_ids_in_test
                           )
     frame = []
     for metrics in result_metrics:
