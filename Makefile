@@ -19,3 +19,9 @@ docker-run-A02:
 	docker run --rm -d -v $(ROOT_DIR):/docker-work \
 		hoge:latest \
 		python3 -m src.A02_aggregate_peformances_from_validation_result_pickle
+
+docker-run-B10:
+    docker run --rm -d -v $(ROOT_DIR):/docker-work \
+        hoge:latest \
+        python3 -m src.B10_topN_dispersion
+        
