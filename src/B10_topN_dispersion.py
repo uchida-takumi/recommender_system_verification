@@ -18,6 +18,7 @@ from src.module.Suprise_algo_wrapper import algo_wrapper
 from src.module.two_way_aspect_model import two_way_aspect_model
 from src.module.MF import MF
 from src.module.ContentBoostedCF import ContentBoostedCF
+from src.module.RankingList import RankingListMean, RankingListCnt, RankingListTotal
 from surprise import SVD # SVD algorithm
 from surprise import KNNBasic # A basic collaborative filtering algorithm.
 from surprise import BaselineOnly # Algorithm predicting the baseline estimate for given user and item.
@@ -72,45 +73,48 @@ user_ids = rating['UserID'].values[sep_indexs[0]]
 item_ids = rating['MovieID'].values[sep_indexs[0]]
 values   = rating['Rating'].values[sep_indexs[0]]
 
+
+# define random model
+class RandomModel:
+    def __init__(self):
+        pass
+    def fit(self, *args, **kargs):
+        pass
+    def predict(self, user_ids, item_ids):
+        return np.random.rand(len(user_ids))
+        
+
 # --- Set models ---
 svd       = algo_wrapper(SVD())
 userbased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':True, 'name':'cosine'}))
 itembased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':False, 'name':'cosine'}))
 baseline  = algo_wrapper(BaselineOnly())
-randommodel = algo_wrapper(NormalPredictor())
+randommodel = RandomModel()
 mf_item_attributes = MF(n_latent_factor=100)
+
+
+
 
 #my_contentbased = ContentBasedCF()
 my_contentbased = MF(n_latent_factor=0)
 my_contentboosted = ContentBoostedCF(pure_content_predictor=my_contentbased)
 
 models = {
-        "svd": svd,
-        "userbased": userbased,
-        "itembased": itembased,
-        "baseline": baseline,
+        #"userbased": userbased,
+        #"itembased": itembased,
+        #"baseline": baseline,
         "randommodel": randommodel,
-        "two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
-        #"two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
-        #"two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
-        #"two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
-        "mf_item_attributes": mf_item_attributes,
-        #"my_mf_050": MF(n_latent_factor=50),
-        "my_mf_100": MF(n_latent_factor=100),
-        #"my_mf_200": MF(n_latent_factor=200),
-        #"my_mf_400": MF(n_latent_factor=400),
-        #"my_contentbased": my_contentbased,
+        #"two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
+        #"mf_item_attributes": mf_item_attributes,
+        #"my_mf_100": MF(n_latent_factor=100),
         #"my_contentboosted": my_contentboosted,
+        #"RankingListMean": RankingListMean(),
+        #"RankingListCnt": RankingListCnt(),
+        "RankingListTotal": RankingListTotal(),
         }
 
 # --- varidation ---
-def get_entropy(model_name, n_user_id=10, seed=123):
-    """
-    example of arg_dict:
-        arg_dict = {
-                'model_name': 'mf_item_attributes',
-                }
-    """
+def get_entropy(model_name, n_user_id=1000, seed=123):
     if model_name in ['mf_item_attributes', 'my_contentbased', 'my_contentboosted']:
         models[model_name].fit(
                 user_ids, item_ids, values,
@@ -142,7 +146,7 @@ def get_entropy(model_name, n_user_id=10, seed=123):
 
     entropy_dict = {k:_entropy(v) for k,v in result_dict.items()}
     
-    return entropy_dict        
+    return entropy_dict
 
 from scipy.stats import entropy
 def _entropy(list_of_ids):
@@ -152,8 +156,8 @@ def _entropy(list_of_ids):
     set_ = list(set(list_of_ids))
     prob = [list_of_ids.count(s) / len(list_of_ids) for s in set_]
     return entropy(prob)
-    
 
+    
 if __name__=='__main__':
     # 並列処理は一つ一つの処理時間を揃えた方が早いので以下のように記述する。
     results = []
@@ -165,7 +169,3 @@ if __name__=='__main__':
     
     import pandas as pd
     pd.DataFrame(results).to_csv('output/B01_entropy.txt', index=False)
-    '''
-    with open('output/B01_entropy.txt', 'w') as f:
-        f.write(str(results))
-    '''

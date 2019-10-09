@@ -9,7 +9,6 @@ This code is based on :
 
 import numpy as np
 from itertools import product
-
 from src.module import util
 
 """ プログラミング用
@@ -50,17 +49,22 @@ class ContentBoostedCF:
         user_ids_transformer = util.id_transformer()
         item_ids_transformer = util.id_transformer()  
         user_ids_transformer.fit(user_ids)
-        item_ids_transformer.fit(list(item_ids))
+        item_ids_transformer.fit(item_ids)
         item_ids_transformer.fit_update(list(item_attributes))
         
+        # 学習タイミングで存在していないidをVに挿入する処理をもう一度考えるべき。
+        # 以前の実装はtry　errorで対処していた。        
         self.user_ids = user_ids_transformer.transform(user_ids)
         self.item_ids = item_ids_transformer.transform(item_ids)
         self.user_ids_transformer = user_ids_transformer
         self.item_ids_transformer = item_ids_transformer
         self.ratings = ratings
-        self.samples = {(u,i):r for u,i,r in zip(self.user_ids, self.item_ids, self.ratings)}
-        
+        self.samples = {(u,i):r for u,i,r in zip(self.user_ids, self.item_ids, self.ratings)}        
         self.item_attributes = {self.item_ids_transformer.transform([i])[0]:vec for i,vec in item_attributes.items()}
+        
+        # 学習や予測の際に(user, item)の行列を生成するので、次元数をここで管理する。
+        self.n_user_ids = len(self.user_ids_transformer.id_convert_dict)
+        self.n_item_ids = len(self.item_ids_transformer.id_convert_dict)
 
         # [eq1]get user-similarity matrx (P) based on user_ids, item_ids, ratings.
         self._fit_P()
@@ -73,7 +77,9 @@ class ContentBoostedCF:
 
         return self
     
-    def predict(self, user_ids, item_ids, item_attributes='NotUse', user_attributes='NotUse'):
+    def predict(self, user_ids, item_ids, 
+                item_attributes='NotUse', user_attributes='NotUse',
+                high_speed=True):
         """
         Arguments:
             user_ids [array-like object]:
@@ -81,30 +87,78 @@ class ContentBoostedCF:
             item_ids [array-like object]:
                 pass
         """
-        results = []
         tf_us = self.user_ids_transformer.transform(user_ids, unknown=None)
         tf_is = self.item_ids_transformer.transform(item_ids, unknown=None)
         mean_values = np.mean(list(self.samples.values()))
+                
+        if high_speed:
+            if len(set(tf_us))==1: # if single user_id 
+                a = tf_us[0]
+                if a is not None:
+                    results = np.array([mean_values]*len(tf_is))
+                    not_none_where = np.where(np.array(tf_is)!=None)
+                    not_none_tf_is = np.array(tf_is)[not_none_where]
+                    not_none_results = self._predict_a_user_items(a, not_none_tf_is)
+                    results[not_none_where] = not_none_results
+                    return np.array(results)
+                
+        results = []
         for tf_u,tf_i in zip(tf_us, tf_is):
             if (tf_u is None) or (tf_i is None):
                 # user_id と item_attributes が未知の場合は全体平均で返却する。
                 predicted = mean_values                
             else:
-                predicted = self._predict(tf_u, tf_i) 
+                predicted = self._predict(tf_u, tf_i) #ここに時間がかかっている
             results.append(predicted)
 
         return np.array(results)
         
+    def _predict_a_user_items(self, a, item_ids):
+        """
+        get prediction between active user a and item_ids.
         
+        a:
+            an active user.
+        item_ids:
+            item_ids
+        """
+        v_a = self.V[a]
+        sw_a = self._get_sw_a(a, _max=2)        
+
+        # knn top similar user_ids of a        
+        top_similar_user_ids = self.P[a].argsort()[:-self.knn:-1]
+        top_similar_user_ids = top_similar_user_ids[1:] # delete the element at 0-index which is self.
+        top_similar_user_ids = top_similar_user_ids[self.P[a][top_similar_user_ids]>0] # only user_neighborhoods having positive similarity score
+
+        # set variables
+        n_items = len(item_ids)
+        n_similar_user_ids = len(top_similar_user_ids)
+        sigma_hwP_delta_v = np.zeros(shape=(n_similar_user_ids, n_items))
+        sigma_hwP = np.zeros(shape=(n_similar_user_ids, n_items))
+
+        hw_au = np.array(list(map(lambda u:self._get_hw_au(a, u), top_similar_user_ids)))[:, None]
+        P_au = np.array(list(map(lambda u:self.P[a,u], top_similar_user_ids)))[:, None]
+        v_u_mean = np.array(list(map(lambda u:self.V[u].mean(), top_similar_user_ids)))[:, None]
+        delta_v_ui = self.V[top_similar_user_ids,:][:,item_ids] - v_u_mean
+        
+        sigma_hwP_delta_v = (hw_au*P_au*delta_v_ui).sum(axis=0)
+        sigma_hwP = (hw_au*P_au).sum(axis=0)
+        
+        c_ai = np.array(list(map(lambda i:self._get_pure_content_prediction(a, i), item_ids)))
+        numerator = sw_a * (c_ai - v_a.mean()) + sigma_hwP_delta_v
+        denominator = sw_a + sigma_hwP
+        p_ai = v_a.mean() + (numerator / denominator)
+            
+        return p_ai
     
     def _predict(self, a, i):
         """
         get prediction between active user a and item i.
         
         a:
-            it means active user.
+            an active user.
         i:
-            it means a item.
+            a item.
         """
 
         v_a = self.V[a]
@@ -115,15 +169,11 @@ class ContentBoostedCF:
         
         # knn top similar user_ids of a        
         top_similar_user_ids = self.P[a].argsort()[:-self.knn:-1]
+        top_similar_user_ids = top_similar_user_ids[1:] # delete the element at 0-index which is self.
+        top_similar_user_ids = top_similar_user_ids[self.P[a][top_similar_user_ids]>0] # only user_neighborhoods having positive similarity score
         
         
         for u in top_similar_user_ids:
-            if u == a:
-                continue
-            # if similarity score is negative, ignore.
-            if self.P[a,u] < 0:
-                continue
-            
             hw_au = self._get_hw_au(a, u)
             P_au = self.P[a,u]
             
@@ -144,10 +194,7 @@ class ContentBoostedCF:
         """
         [eq1] create pure user-based similarity matrix.
         """
-        n_user_ids = len(set(self.user_ids))
-        n_item_ids = len(set(self.item_ids))
-        
-        R = np.zeros(shape=(n_user_ids, n_item_ids))
+        R = np.zeros(shape=(self.n_user_ids, self.n_item_ids))
         
         for u_i,r in self.samples.items():
             R[u_i[0],u_i[1]] = r
@@ -161,23 +208,17 @@ class ContentBoostedCF:
         """
         create pseudo user-rating matrix whose dimmention is (user_id, item_id)
         """
-        n_user_ids = len(set(self.user_ids))
-        n_item_ids = len(set(self.item_ids))
-        
-        V = np.zeros(shape=(n_user_ids, n_item_ids))
-        
-        user_item_ids = list(product(range(n_user_ids), range(n_item_ids)))
+        user_item_ids = list(product(range(self.n_user_ids), range(self.n_item_ids)))
         _user_ids = [_[0] for _ in user_item_ids]
         _item_ids = [_[1] for _ in user_item_ids]
-        
-        
+                
         pure_content_predictions = self.pure_content_predictor.predict_high_speed_but_no_preprocess(_user_ids, _item_ids, item_attributes=self.item_attributes)
         
         """ 高速化の為に上に変更したが、下の記述のほうが一般性は高い。
         pure_content_predictions = self.pure_content_predictor.predict(_user_ids, _item_ids, item_attributes=self.item_attributes)
         """
         
-        V = np.zeros(shape=(n_user_ids, n_item_ids))
+        V = np.zeros(shape=(self.n_user_ids, self.n_item_ids))
         for u,i,p in zip(_user_ids, _item_ids, pure_content_predictions):
             V[u,i] = p
         for u,i in self.samples:
@@ -245,33 +286,14 @@ class ContentBoostedCF:
     
 
 
-if __name__ == '__main__':
+if __name__ == 'how to use it':
     
-    """
-    # それなりの大量データでの結果
     from src.module.ContentBoostedCF import ContentBoostedCF
     from src.module.MF import MF
-
-    import numpy as np
-    user_ids = np.random.choice(range(100), size=1000)
-    item_ids = np.random.choice(range(500), size=1000)
-    ratings  = np.random.choice(range(1,6), size=1000)
-    item_attributes = {i:np.random.choice([0,1], size=18) for i in range(5000)}
-
-    CBCF = ContentBoostedCF(pure_content_predictor=MF(n_latent_factor=0))
-    CBCF.fit(user_ids, item_ids, ratings, item_attributes)
-
-    user_ids = np.random.choice(range(100), size=1000)
-    item_ids = np.random.choice(range(500), size=1000)
-
-    CBCF.predict(user_ids, item_ids, item_attributes) 
-    self = CBCF
     
-    """
 
     # Usage
     ## 下記のデータは明らかに、item_attribute = [負の影響, 影響なし, 正の影響]になっている。
-
     user_ids = [1,1,1,1,5,5,7,8]
     item_ids = [1,2,3,4,2,4,1,4]
     ratings  = [5,5,3,1,5,1,5,1]
@@ -286,8 +308,6 @@ if __name__ == '__main__':
             99:[0,1,0], #影響なしのみ
             }
 
-    from src.module.ContentBoostedCF import ContentBoostedCF
-    from src.module.MF import MF
 
     self = ContentBoostedCF(pure_content_predictor=MF(n_latent_factor=0))
     self.fit(user_ids, item_ids, ratings, item_attributes)
@@ -301,6 +321,35 @@ if __name__ == '__main__':
     
     self.V
     self._get_pure_content_prediction(1,1)
+    
+    # ----------------------------------- #
+    # それなりの大量データでの結果
+    import numpy as np
+    size = 10000
+    n_user_ids, n_item_ids = 1000, 5000
+    
+    user_ids = np.random.choice(range(n_user_ids), size=size)
+    item_ids = np.random.choice(range(n_item_ids), size=size)
+    ratings  = np.random.choice(range(1,6), size=size)
+    item_attributes = {i:np.random.choice([0,1], size=18) for i in range(n_item_ids+100)}
+
+    self = ContentBoostedCF(pure_content_predictor=MF(n_latent_factor=0))
+    self.fit(user_ids, item_ids, ratings, item_attributes)
+
+    user_ids = np.random.choice(range(n_user_ids-100,n_user_ids+100), size=100)
+    item_ids = np.random.choice(range(n_item_ids-100,n_item_ids+100), size=100)
+
+    self.predict(user_ids, item_ids, item_attributes) 
+    self = CBCF
+    
+
+    
+    # 予測の高速化と値の整合性を確認する
+    user_ids = np.random.choice([0], size=1000)
+    item_ids = np.random.choice(range(n_item_ids-100,n_item_ids+100), size=1000)    
+    high_speed = self.predict(user_ids, item_ids, item_attributes, high_speed=True) 
+    normal_speed = self.predict(user_ids, item_ids, item_attributes, high_speed=False) 
+    assert all(high_speed==normal_speed)
     
 
     

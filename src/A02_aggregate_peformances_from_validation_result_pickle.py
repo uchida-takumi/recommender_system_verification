@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+A01_get_pickle_for_validation.py の結果、生成された *.pickleファイルを参照して、評価結果をtsvファイルで出力する。
+"""
+
 import os
 import pickle
 import re
@@ -42,16 +46,10 @@ def parse(pickle_file):
     remove_still_interaction_from_test = vr['VALIDATION_PARAMETERs']['remove_still_interaction_from_test']
         
     # --- categorize items and users for Validation ---    
-    cnt_dict = Counter(vr['train_item_ids'])
-    head_cnt = np.percentile(list(cnt_dict.values()), q=90)
-    head_item_ids = [k for k,cnt in cnt_dict.items() if cnt >= head_cnt]
-    tail_item_ids = [k for k,cnt in cnt_dict.items() if cnt <  head_cnt]
+    tail_item_ids, head_item_ids = cluster_ids_by_freaquence(vr['train_item_ids'], n_cluster=2)
     no_trained_item_ids  = np.unique(vr['test_item_ids'][~np.in1d(vr['test_item_ids'], np.unique(vr['train_item_ids']))])
 
-    cnt_dict = Counter(vr['train_user_ids'])
-    head_cnt = np.percentile(list(cnt_dict.values()), q=90)
-    head_user_ids = [k for k,cnt in cnt_dict.items() if cnt >= head_cnt]
-    tail_user_ids = [k for k,cnt in cnt_dict.items() if cnt <  head_cnt]
+    tail_user_ids, head_user_ids = cluster_ids_by_freaquence(vr['train_user_ids'], n_cluster=2)
     no_trained_user_ids  = np.unique(vr['test_user_ids'][~np.in1d(vr['test_user_ids'], np.unique(vr['train_user_ids']))])
 
 
@@ -160,6 +158,43 @@ def common_process(vr, user_ids=None, item_ids=None):
 
     return return_df
 
+def cluster_ids_by_freaquence(_ids, n_cluster=2):
+    """
+    get a id-list abscendly ordered by the freazuence in _ids.
+    
+    EXAMPLE
+    -------------
+    _ids = [1,1,1,1,2,2,3,3,3,3,3,4]
+    n_cluster = 2
+    cluster_ids_by_freaquence(_ids, n_cluster)
+     > [[4, 2, 1], [3]]
+    n_cluster = 3
+    cluster_ids_by_freaquence(_ids, n_cluster)
+     > [[4, 2, 1], [3], []]
+
+    _ids = [1,1,1,2,2,2,3,3,3,4,5,6]
+    n_cluster = 3
+    cluster_ids_by_freaquence(_ids, n_cluster)
+     > [[4, 5, 6, 1], [2], [3]]
+    """
+    _id_rates = [(_id, cnt/len(_ids)) for _id,cnt in Counter(_ids).items()]
+    _id_rates = sorted(_id_rates, key=lambda x: x[1])
+    
+    accum_rate = 0
+    result = []
+    for i in range(n_cluster):
+        thresh_hold = (i+1)/n_cluster
+        _result = []
+        for _id,rate in _id_rates:
+            _result.append(_id)
+            accum_rate += rate
+            if accum_rate > thresh_hold:
+                break            
+        _id_rates = [_id_rate for _id_rate in _id_rates if _id_rate[0] not in _result]
+        result.append(_result)
+    return result
+            
+    
 
 if __name__ == '__main__':
     main()

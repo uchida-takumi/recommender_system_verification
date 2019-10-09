@@ -7,6 +7,13 @@ unzip-data:
 mv_pickle:
 	mv pickle/* ../backup/
 
+curl_dataset:
+	cd data ;\
+	curl -OL http://files.grouplens.org/datasets/movielens/ml-latest.zip ;\
+	unzip ml-latest.zip ;\
+	cd .. ;\
+
+
 docker-build:
 	docker build -t hoge:latest .
 
@@ -24,4 +31,3 @@ docker-run-B10:
 	docker run --rm -d -v $(ROOT_DIR):/docker-work \
 		hoge:latest \
 		python3 -m src.B10_topN_dispersion
-        

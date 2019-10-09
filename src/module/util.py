@@ -4,6 +4,23 @@
 import pandas as pd
 import numpy as np
 
+def read_mllatest_data():
+    # set file path
+    PATH_rating = './data/ml-latest/ratings.csv'
+    PATH_movie  = './data/ml-latest/movies.csv'
+    
+    # set columns
+    COLS_rating = ['UserID', 'MovieID', 'Rating', 'Timestamp']
+    COLS_movie  = ['MovieID', 'Title', 'Genres']
+    
+    
+    # read DataSet
+    rating = pd.read_csv(PATH_rating, sep=',', names=COLS_rating, skiprows=1)
+    user   = pd.DataFrame()
+    movie  = pd.read_csv(PATH_movie, sep=',', names=COLS_movie, skiprows=1)
+    
+    return rating, user, movie
+
 def read_ml20m_data():
     # set file path
     PATH_rating = './data/ml-20m/ratings.csv'
@@ -137,6 +154,24 @@ def pearson_correlation_from_R(R, **key_args__cosine_similarity):
     diff_R[R_np==0] = 0
     
     return cosine_similarity(diff_R, **key_args__cosine_similarity)
+
+
+def numpy_null_indexing(numpy_array, indexes, null_dict={None:0}):
+    """
+    return numpy_array[indexes] despite indexes have null
+    
+    numpy_array = np.array([0,10,20,30,40])
+    indexes = [2,2,4,None,'NULL']
+    null_dict = {None:-1, 'NULL':-2}
+    
+    numpy_null_indexing(numpy_array, indexes, null_dict)
+     > array([20, 20, 40, -1, -2])
+    """
+    to_dict = {key:val for key,val in enumerate(numpy_array)}
+    to_dict.update(null_dict)
+    return np.array([to_dict[i] for i in indexes])
+    
+
 
 if __name__=='__main__':
     dict_ = {'aa':123}

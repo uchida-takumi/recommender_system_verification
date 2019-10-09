@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-各モジュール（from surprise）からを評価するための中間生成物をpickleで保存する。
+データを指定したn_holdに分割し、modelsごとにテストを行う。
+それぞれのテスト結果をpickleファイルにして出力する。
 """
 
 from __future__ import (absolute_import, division, print_function, unicode_literals)
@@ -20,6 +21,7 @@ from src.module.Suprise_algo_wrapper import algo_wrapper
 from src.module.two_way_aspect_model import two_way_aspect_model
 from src.module.MF import MF
 from src.module.ContentBoostedCF import ContentBoostedCF
+from src.module.RankingList import RankingListMean, RankingListTotal, RankingListCnt
 from surprise import SVD # SVD algorithm
 from surprise import KNNBasic # A basic collaborative filtering algorithm.
 from surprise import BaselineOnly # Algorithm predicting the baseline estimate for given user and item.
@@ -47,7 +49,8 @@ topN = [5,10,20]
 
 # set directory to save resutl
 DIR_output = 'pickle'
-rating, user, movie = util.read_ml20m_data()
+rating, user, movie = util.read_mllatest_data()
+#rating, user, movie = util.read_ml20m_data()
 
 ## set item_attributes
 Genres = set()
@@ -80,7 +83,6 @@ sep_indexs = [(seps[i-1]<=rating.Timestamp)&(rating.Timestamp<seps[i]) for i in 
 svd       = algo_wrapper(SVD())
 userbased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':True, 'name':'cosine'}))
 itembased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':False, 'name':'cosine'}))
-baseline  = algo_wrapper(BaselineOnly())
 randommodel = algo_wrapper(NormalPredictor())
 mf_item_attributes = MF(n_latent_factor=100)
 
@@ -93,19 +95,21 @@ models = {
         "svd": svd,
         "userbased": userbased,
         "itembased": itembased,
-        "baseline": baseline,
         "randommodel": randommodel,
         "two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
-        #"two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
-        #"two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
+        "two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
+        "two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
         #"two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
         "mf_item_attributes": mf_item_attributes,
-        #"my_mf_050": MF(n_latent_factor=50),
+        "my_mf_010": MF(n_latent_factor=10),
+        "my_mf_050": MF(n_latent_factor=50),
         "my_mf_100": MF(n_latent_factor=100),
-        #"my_mf_200": MF(n_latent_factor=200),
-        #"my_mf_400": MF(n_latent_factor=400),
+        "my_mf_200": MF(n_latent_factor=200),
         #"my_contentbased": my_contentbased,
         "my_contentboosted": my_contentboosted,
+        #"RankingListMean": RankingListMean(),
+        "RankingListTotal": RankingListTotal(),
+        "RankingListCnt": RankingListCnt(),
         }
 
 # --- varidation ---

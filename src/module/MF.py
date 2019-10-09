@@ -16,7 +16,6 @@ from src.module import util
 
 
 class MF:
-
     def __init__(self, n_latent_factor=200, learning_rate=0.005, 
                  regularization_weight=0.02, n_epochs=20, 
                  global_bias=True, id_bias=True,
@@ -219,8 +218,8 @@ class MF:
         a_u, a_i, pq = 0, 0, 0
 
         b = self.b
-        b_u = self.b_u[tf_us]
-        b_i = self.b_i[tf_is]
+        b_u = util.numpy_null_indexing(self.b_u, tf_us, {None:0, np.nan:0})
+        b_i = util.numpy_null_indexing(self.b_i, tf_is, {None:0, np.nan:0})
         
         if (self.fit_user_attributes) and (user_attributes is not None):
             attributes_array = np.array([user_attributes.get(u, self.UserAttr[tu]) for u,tu in zip(user_ids, tf_us)])
@@ -370,5 +369,13 @@ if __name__ == 'some tests':
     print(mf.a_i, answer_item_attr_coef)
     for p,a in zip(mf.predict(user_ids, item_ids, user_attribute, item_attribute), ratings):
         print(p,a,(p-a)/(abs(a)+0.00001))
-        
     
+    # predict_high_speed_but_no_preprocess のテスト
+    from src.module.MF import MF
+    mf = MF(n_latent_factor=0, learning_rate=0.010, 
+            regularization_weight=0.0, n_epochs=30, 
+            global_bias=True, id_bias=True, verbose=True)
+    mf.fit(user_ids, item_ids, ratings, user_attribute, item_attribute)
+    high_speed = mf.predict_high_speed_but_no_preprocess(user_ids, item_ids, user_attribute, item_attribute)
+    normal_speed = mf.predict(user_ids, item_ids, user_attribute, item_attribute)
+    assert all(high_speed==normal_speed)
