@@ -193,9 +193,9 @@ class core_two_way_aspect_model:
 
 if __name__=='__main__':
 
-    user_ids = [5,5,5,6,6,6,6]
-    item_ids = [1,3,6,2,6,3,2]
-    values   = [1,3,3,2,3,1,2]
+    user_ids = [5,5,5,6,6,6,6,3,3,3,2,2,2,1,1]
+    item_ids = [1,3,6,2,6,3,2,1,2,3,1,2,3,1,2]
+    values   = [1,3,3,2,3,1,2,1,3,3,2,1,1,3,2]
     postive_threshold = 3
     item_attributes = {
             1: [1,0,1,0],
@@ -210,5 +210,7 @@ if __name__=='__main__':
     twam.predict(user_ids, item_ids)
     twam.predict([5], [99]) # 学習中にないitemID
     twam.predict([5], [123]) # attributeにすらないitemID
-    twam.predict([123], [3]) # 学習中にないuserID
+    twam.predict([123, 123, 123, 123, 123], [1, 2, 3, 6, 99]) # 学習中にないuserID
     twam.predict([123], [123]) # itemもuserも完全に新規の場合
+    
+    twam.Pp_m[:, 0].mean()

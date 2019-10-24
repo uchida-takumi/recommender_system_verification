@@ -6,10 +6,9 @@
 import pandas as pd
 from module import util
 
-pd.set_option('display.height', 1000)
-pd.set_option('display.max_rows', 50)
-pd.set_option('display.max_columns', 20)
-pd.set_option('display.width', 1000)
+pd.options.display.max_rows = 50
+pd.options.display.max_columns = 50
+pd.options.display.width = 1000
 
 # データを読み込む
 rating, user, movie = util.read_ml20m_data()
