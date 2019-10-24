@@ -13,6 +13,8 @@ import pandas as pd
 from collections import Counter
 from itertools import product
 
+# head, tail の分岐点
+Q=90
 
 def main():
     DIR = 'pickle'
@@ -24,7 +26,7 @@ def main():
         frame.append(parse(pickle_file))
     
     result = pd.concat(frame, ignore_index=True)
-    result.to_csv('output/A02_validation_result.tsv', index=False, sep='\t')
+    result.to_csv('output/A02_validation_result_Q={}.tsv'.format(Q), index=False, sep='\t')
 
 
 def parse(pickle_file):
@@ -46,10 +48,18 @@ def parse(pickle_file):
     remove_still_interaction_from_test = vr['VALIDATION_PARAMETERs']['remove_still_interaction_from_test']
         
     # --- categorize items and users for Validation ---    
-    tail_item_ids, head_item_ids = cluster_ids_by_freaquence(vr['train_item_ids'], n_cluster=2)
+    cnt_dict = Counter(vr['train_item_ids'])
+    head_cnt = np.percentile(list(cnt_dict.values()), q=Q)
+    head_item_ids = [k for k,cnt in cnt_dict.items() if cnt >= head_cnt]
+    tail_item_ids = [k for k,cnt in cnt_dict.items() if cnt <  head_cnt]
+    #tail_item_ids, head_item_ids = cluster_ids_by_freaquence(vr['train_item_ids'], n_cluster=2)
     no_trained_item_ids  = np.unique(vr['test_item_ids'][~np.in1d(vr['test_item_ids'], np.unique(vr['train_item_ids']))])
 
-    tail_user_ids, head_user_ids = cluster_ids_by_freaquence(vr['train_user_ids'], n_cluster=2)
+    cnt_dict = Counter(vr['train_user_ids'])
+    head_cnt = np.percentile(list(cnt_dict.values()), q=Q)
+    head_user_ids = [k for k,cnt in cnt_dict.items() if cnt >= head_cnt]
+    tail_user_ids = [k for k,cnt in cnt_dict.items() if cnt <  head_cnt]
+    #tail_user_ids, head_user_ids = cluster_ids_by_freaquence(vr['train_user_ids'], n_cluster=2)
     no_trained_user_ids  = np.unique(vr['test_user_ids'][~np.in1d(vr['test_user_ids'], np.unique(vr['train_user_ids']))])
 
 
