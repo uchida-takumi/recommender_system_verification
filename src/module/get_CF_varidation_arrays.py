@@ -169,12 +169,6 @@ def get_CF_varidation_arrays(
 
 
 
-
-    
-    
-    
-
-
 if __name__ == '__main__':
     import numpy as np
     import re

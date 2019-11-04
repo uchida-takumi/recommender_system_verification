@@ -3,6 +3,29 @@
 
 import pandas as pd
 import numpy as np
+import os
+from datetime import datetime
+
+def read_netflix_data():
+    # set directory path
+    DIR_ = './data/netflix/training_set/'    
+    files = list(map(lambda x: DIR_+x, os.listdir(DIR_)))    
+    frame = []
+    for file in files:
+        #file = files[0]
+        movie_id = int(file.replace(DIR_, '').split('_')[1].replace('.txt', ''))
+        data = pd.read_csv(file, names=['UserID', 'Rating', 'Timestamp'], skiprows=1)
+        data['MovieID'] = movie_id
+        frame.append(data)
+    rating = pd.concat(frame, axis=0)
+    rating['Timestamp'] = pd.to_datetime(rating['Timestamp'], format='%Y-%m-%d')
+    base_dt = datetime(1900,1,1)
+    rating['Timestamp'] = (rating['Timestamp'] - base_dt).dt.total_seconds()
+
+    user   = pd.DataFrame()
+    movie  = pd.DataFrame()
+    
+    return rating, user, movie
 
 def read_mllatest_data():
     # set file path

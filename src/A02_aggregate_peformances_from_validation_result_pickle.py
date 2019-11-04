@@ -14,7 +14,7 @@ from collections import Counter
 from itertools import product
 
 # head, tail の分岐点
-Q=90
+Q=[80,85,90,95]
 
 def main():
     DIR = 'pickle'
@@ -23,13 +23,14 @@ def main():
     
     frame = []
     for pickle_file in pickle_file_list:
-        frame.append(parse(pickle_file))
+        for q in Q:
+            frame.append(parse(pickle_file, q))
     
     result = pd.concat(frame, ignore_index=True)
     result.to_csv('output/A02_validation_result_Q={}.tsv'.format(Q), index=False, sep='\t')
 
 
-def parse(pickle_file):
+def parse(pickle_file, q):#追加
     """
     pickle_file = pickle_file_list[0]
     """
@@ -49,14 +50,14 @@ def parse(pickle_file):
         
     # --- categorize items and users for Validation ---    
     cnt_dict = Counter(vr['train_item_ids'])
-    head_cnt = np.percentile(list(cnt_dict.values()), q=Q)
+    head_cnt = np.percentile(list(cnt_dict.values()), q=q)#追加
     head_item_ids = [k for k,cnt in cnt_dict.items() if cnt >= head_cnt]
     tail_item_ids = [k for k,cnt in cnt_dict.items() if cnt <  head_cnt]
     #tail_item_ids, head_item_ids = cluster_ids_by_freaquence(vr['train_item_ids'], n_cluster=2)
     no_trained_item_ids  = np.unique(vr['test_item_ids'][~np.in1d(vr['test_item_ids'], np.unique(vr['train_item_ids']))])
 
     cnt_dict = Counter(vr['train_user_ids'])
-    head_cnt = np.percentile(list(cnt_dict.values()), q=Q)
+    head_cnt = np.percentile(list(cnt_dict.values()), q=q)#追加
     head_user_ids = [k for k,cnt in cnt_dict.items() if cnt >= head_cnt]
     tail_user_ids = [k for k,cnt in cnt_dict.items() if cnt <  head_cnt]
     #tail_user_ids, head_user_ids = cluster_ids_by_freaquence(vr['train_user_ids'], n_cluster=2)
@@ -99,6 +100,7 @@ def parse(pickle_file):
                         ,topN=topN
                         ,remove_still_interaction_from_test=remove_still_interaction_from_test
                         ,hold=hold
+                        ,q=q #追加
                           )
     frame = []
     for metrics in result_metrics:

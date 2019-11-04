@@ -7,13 +7,21 @@ unzip-data:
 mv_pickle:
 	mv pickle/* ../backup/
 
-curl_dataset:
+curl_movielens_dataset:
 	cd data ;\
 	curl -OL http://files.grouplens.org/datasets/movielens/ml-latest.zip ;\
 	unzip ml-latest.zip ;\
 	cd .. ;\
 
-
+curl_netflix_dataset:
+    cd data ;\    
+	curl -OL https://archive.org/download/nf_prize_dataset.tar/nf_prize_dataset.tar.gz ;\
+	tar -xvf nf_prize_dataset.tar.gz ;\
+	mv download netflix ;\
+	cd netflix ;\
+	tar -xvf training_set.tar ;\
+	cd ../../ ;\
+    
 docker-build:
 	docker build -t hoge:latest .
 
