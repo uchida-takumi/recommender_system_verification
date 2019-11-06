@@ -49,19 +49,24 @@ topN = [5,10,20]
 
 # set directory to save resutl
 DIR_output = 'pickle'
-rating, user, movie = util.read_mllatest_data()
+
+print('レコメンデーションのデータを読み込みます')
+rating, user, movie = util.read_netflix_data()
 #rating, user, movie = util.read_ml20m_data()
+#rating, user, movie = util.read_mllatest_data()
 
 ## set item_attributes
 Genres = set()
-for genres in movie['Genres']:
-    for genre in genres.split('|'):
-        Genres.add(genre)
-Genres = sorted(list(Genres))
-
-get_attributes = lambda genres: [int(Ge in genres.split('|')) for Ge in Genres]
-item_attributes = {row['MovieID']:get_attributes(row['Genres']) for idx, row in movie.iterrows()}
-
+if 'Genres' in movie.columns:
+    print('movieのGenres情報を整理します')
+    for genres in movie['Genres']:
+        for genre in genres.split('|'):
+            Genres.add(genre)
+    Genres = sorted(list(Genres))
+    get_attributes = lambda genres: [int(Ge in genres.split('|')) for Ge in Genres]
+    item_attributes = {row['MovieID']:get_attributes(row['Genres']) for idx, row in movie.iterrows()}
+else:
+    print('movieのGenres情報がありません。このまま処理をつづけます')
 
 ####################################
 # set dataset
@@ -92,13 +97,13 @@ my_contentbased = MF(n_latent_factor=0)
 my_contentboosted = ContentBoostedCF(pure_content_predictor=my_contentbased)
 
 models = {
-        "svd": svd,
+        #"svd": svd,
         "userbased": userbased,
         "itembased": itembased,
         "randommodel": randommodel,
-        "two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
-        "two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
-        "two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
+        #"two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
+        #"two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
+        #"two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
         #"two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
         "mf_item_attributes": mf_item_attributes,
         "my_mf_010": MF(n_latent_factor=10),
@@ -106,10 +111,10 @@ models = {
         "my_mf_100": MF(n_latent_factor=100),
         "my_mf_200": MF(n_latent_factor=200),
         #"my_contentbased": my_contentbased,
-        "my_contentboosted": my_contentboosted,
+        #"my_contentboosted": my_contentboosted,
         #"RankingListMean": RankingListMean(),
         "RankingListTotal": RankingListTotal(),
-        "RankingListCnt": RankingListCnt(),
+        #"RankingListCnt": RankingListCnt(),
         }
 
 # --- varidation ---
