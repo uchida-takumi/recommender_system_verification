@@ -14,7 +14,7 @@ curl_movielens_dataset:
 	cd .. ;\
 
 curl_netflix_dataset:
-    cd data ;\    
+	cd data ;\
 	curl -OL https://archive.org/download/nf_prize_dataset.tar/nf_prize_dataset.tar.gz ;\
 	tar -xvf nf_prize_dataset.tar.gz ;\
 	mv download netflix ;\
