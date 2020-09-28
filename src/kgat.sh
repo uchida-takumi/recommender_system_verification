@@ -1,0 +1,1 @@
+# 0-holdpython3 src/kgat_data_set.py --k 0python3 src/kgat_A01_get_pickle_for_validation.py
