@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import re
+import copy
 
 def get_CF_varidation_arrays(
                             train_user_ids, train_item_ids, train_values
@@ -101,6 +102,10 @@ def get_CF_varidation_arrays(
     test_good_values   = test_values[good_indexes]
     test_good_result = {tN:[] for tN in topN}
     
+    ## 別々に予測すると時間がかかるため、高速化のために一気に予測する    
+    bulk_iters, bulk_user_ids, bulk_item_ids = [], [], []
+    n_iter = 0
+    print('bulk で予測を実行')
     for user_id, item_id, value in zip(test_good_user_ids, test_good_item_ids, test_good_values):
         # user_id, item_id, value = test_good_user_ids[0], test_good_item_ids[0], test_good_values[0]
         if remove_still_interaction_from_test:
@@ -119,15 +124,33 @@ def get_CF_varidation_arrays(
         # get random selected item_ids as that the user_id will not be interested in. 
         n_random_selected_item_ids = min(n_random_selected_item_ids, len(item_id_set))
         random_selected_item_ids = np.random.choice(list(item_id_set), size=n_random_selected_item_ids, replace=False)
+        _item_ids = np.concatenate([random_selected_item_ids, [item_id]])
         
-        predicted_random_item_ids = model.predict([user_id]*n_random_selected_item_ids, random_selected_item_ids, **fit_args)
-        #predicted_random_item_ids = model.predict([user_id]*n_random_selected_item_ids, random_selected_item_ids)
-        predicted_the_item_id = model.predict([user_id], [item_id], **fit_args)
-        #predicted_the_item_id = model.predict([user_id], [item_id])
+        bulk_user_ids += copy.deepcopy([user_id]*len(_item_ids))
+        bulk_item_ids += copy.deepcopy(list(_item_ids))
+        bulk_iters += copy.deepcopy([n_iter]*len(_item_ids))
         
-        predicted = np.concatenate([predicted_random_item_ids, predicted_the_item_id])
-        item_ids  = np.concatenate([random_selected_item_ids, [item_id]])
-        item_ids__predicted = np.concatenate([item_ids.reshape(-1,1), predicted.reshape(-1,1)], axis=1)
+        n_iter += 1
+        
+    bulk_user_ids = np.array(bulk_user_ids)
+    bulk_item_ids = np.array(bulk_item_ids)
+    bulk_iters = np.array(bulk_iters)
+    bulk_predicted = np.array(model.predict(bulk_user_ids, bulk_item_ids, **fit_args))        
+
+    print('予測結果のhitを計算する')
+    n_max_iter = len(test_good_user_ids)
+    n_iter = 0     
+    set_iters = set(bulk_iters)       
+    for _iter in set_iters:
+        n_iter += 1
+        if n_iter % 100 == 0:
+            print(f'get_CF_Varidation_array: {n_iter}/{n_max_iter}')
+        
+        indexes = bulk_iters == _iter
+
+        _predicted = bulk_predicted[indexes]
+        _item_ids = bulk_item_ids[indexes]
+        item_ids__predicted = np.concatenate([_item_ids.reshape(-1,1), _predicted.reshape(-1,1)], axis=1)
         
         # sort by random shuffle
         np.random.shuffle(item_ids__predicted)
@@ -171,7 +194,7 @@ def get_CF_varidation_arrays(
 
 
 
-if __name__ == '__main__':
+if __name__ == 'How to use':
     import numpy as np
     import re
     # INPUTs
