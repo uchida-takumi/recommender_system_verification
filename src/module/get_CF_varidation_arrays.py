@@ -10,7 +10,8 @@ def get_CF_varidation_arrays(
                            ,good_score_threshold=5
                            ,n_random_selected_item_ids=1000
                            ,remove_still_interaction_from_test=False
-                           ,topN=[5,10], random_seed=None, **fit_args):
+                           ,topN=[5,10], random_seed=None, need_fit=True
+                           ,**fit_args):
     """
      This is a inplementation of (*1) which define a metric for 
     Top-N Recommendation Tasks.    
@@ -88,7 +89,8 @@ def get_CF_varidation_arrays(
     np.random.seed(seed=random_seed)
     
     # ---- Training ----
-    model.fit(train_user_ids, train_item_ids, train_values, **fit_args)
+    if need_fit:
+        model.fit(train_user_ids, train_item_ids, train_values, **fit_args)
         
     # ---- Testing ----
     ## get recall and precision
@@ -112,7 +114,7 @@ def get_CF_varidation_arrays(
         # add test_item_ids in item_id_set
         item_id_set.update(test_item_ids)
     
-        # remove the item_id from item_id_set
+        # remove the item_id from item_itest_ratingd_set
         item_id_set = item_id_set - {item_id}
         # get random selected item_ids as that the user_id will not be interested in. 
         n_random_selected_item_ids = min(n_random_selected_item_ids, len(item_id_set))
