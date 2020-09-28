@@ -157,6 +157,22 @@ def _entropy(list_of_ids):
     prob = [list_of_ids.count(s) / len(list_of_ids) for s in set_]
     return entropy(prob)
 
+def _catalogue_coverage(list_of_ids, candidate_ids):
+    """
+    レコメンデーションの多様性指標である catalogue_coverage としてまとめる。
+    
+    list_of_ids: 表示したアイテムIDすべてを
+    Candidate: 表示候補となるID集合
+    
+    EXAMPLE
+    ------------
+    list_of_ids = [1,1,2,3,2]
+    candidate_ids = [0,1,2,3,4,5,6]    
+    catalogue_coverage(list_of_ids, candidate_ids)
+     > 0.42857142857142855
+    """
+    return len(set(list_of_ids)) / len(set(candidate_ids))
+
     
 if __name__=='__main__':
     # 並列処理は一つ一つの処理時間を揃えた方が早いので以下のように記述する。

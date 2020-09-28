@@ -51,8 +51,8 @@ topN = [5,10,20]
 DIR_output = 'pickle'
 
 print('レコメンデーションのデータを読み込みます')
-rating, user, movie = util.read_netflix_data()
-#rating, user, movie = util.read_ml20m_data()
+#rating, user, movie = util.read_netflix_data()
+rating, user, movie = util.read_ml20m_data()
 #rating, user, movie = util.read_mllatest_data()
 
 ## set item_attributes
