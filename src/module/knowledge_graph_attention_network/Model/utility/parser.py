@@ -24,7 +24,6 @@ def parse_args():
     parser.add_argument('--epoch', type=int, default=100, #後で100に戻すべき
                         help='Number of epoch.')
 
-    '''
     parser.add_argument('--embed_size', type=int, default=64,
                         help='CF Embedding size.')
     parser.add_argument('--kge_size', type=int, default=64,
@@ -35,18 +34,6 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='CF batch size.')
     parser.add_argument('--batch_size_kg', type=int, default=2048,
-                        help='KG batch size.')
-    '''
-    parser.add_argument('--embed_size', type=int, default=3,
-                        help='CF Embedding size.')
-    parser.add_argument('--kge_size', type=int, default=4,
-                        help='KG Embedding size.')
-    parser.add_argument('--layer_size', nargs='?', default='[64]',
-                        help='Output sizes of every layer')
-
-    parser.add_argument('--batch_size', type=int, default=1,
-                        help='CF batch size.')
-    parser.add_argument('--batch_size_kg', type=int, default=2,
                         help='KG batch size.')
 
 
