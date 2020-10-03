@@ -106,8 +106,9 @@ class KGAT(object):
         self.neg_items = tf.placeholder(tf.int32, shape=(None,))
 
         # for knowledge graph modeling (TransD)
-        self.A_values = tf.placeholder(tf.float32, shape=[len(self.all_v_list)], name='A_values')
-
+        self.A_values = tf.placeholder(
+            tf.float32, shape=[len(self.all_v_list)], name='A_values'
+            )
         self.h = tf.placeholder(tf.int32, shape=[None], name='h')
         self.r = tf.placeholder(tf.int32, shape=[None], name='r')
         self.pos_t = tf.placeholder(tf.int32, shape=[None], name='pos_t')

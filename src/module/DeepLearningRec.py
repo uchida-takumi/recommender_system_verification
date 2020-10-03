@@ -48,12 +48,11 @@ class KGAT:
         self = KGAT()
         data_config = config
         pretrain_data = None
-        args
-        """        
-        # fix
-        args.pretrain = 0 # 重みを事前に学習しない
-        args.report == 0 # デバッグのためにパフォーマンスレポートは出力する        
         
+        sess = tf.Session()
+        
+        self.fit()
+        """        
         # setup # これはバグの元、argsは他のモジュールでも読み込まれているため、ここで変更すると不整合が生じる
         """
         args.model_type = 'kgat'
@@ -74,6 +73,7 @@ class KGAT:
         saver = tf.train.Saver()
         
     def fit(self):
+        
         t0 = time()
 
         ##############################
@@ -86,7 +86,7 @@ class KGAT:
             elif args.model_type in ['ncf', 'nfm', 'kgat']:
                 layer = '-'.join([str(l) for l in eval(args.layer_size)])
                 weights_save_path = '%sweights/%s/%s/%s/l%s_r%s' % (
-                    args.weights_path, args.dataset, model.model_type, layer, str(args.lr), '-'.join([str(r) for r in eval(args.regs)]))
+                    args.weights_path, args.dataset, self.model.model_type, layer, str(args.lr), '-'.join([str(r) for r in eval(args.regs)]))
     
             ensureDir(weights_save_path)
             save_saver = tf.train.Saver(max_to_keep=1)

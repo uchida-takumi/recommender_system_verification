@@ -15,7 +15,6 @@ from CFKG import CFKG
 from NFM import NFM
 from KGAT import KGAT
 
-
 import os
 import sys
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'

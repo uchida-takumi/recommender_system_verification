@@ -49,6 +49,8 @@ max_seconds = rating.Timestamp.max()
 
 seps = sorted([max_seconds - i * one_day_sec * train_test_days for i in range(n_hold+2)])
 sep_indexs = [(seps[i-1]<=rating.Timestamp)&(rating.Timestamp<seps[i]) for i in range(1, n_hold+2)]
+
+
 train_index, test_index = sep_indexs[k_hold], sep_indexs[k_hold+1]
 train_rating, test_rating = rating[train_index], rating[test_index]
 

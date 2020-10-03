@@ -28,7 +28,8 @@ def parse_args():
                         help='CF Embedding size.')
     parser.add_argument('--kge_size', type=int, default=64,
                         help='KG Embedding size.')
-    parser.add_argument('--layer_size', nargs='?', default='[64]',
+    # これが attentive layer の回数となり、3次のリストが設定されれば3次先の接続までを考慮できる？
+    parser.add_argument('--layer_size', nargs='?', default='[64,32,16]',
                         help='Output sizes of every layer')
 
     parser.add_argument('--batch_size', type=int, default=1024,
@@ -56,7 +57,7 @@ def parse_args():
 
     parser.add_argument('--node_dropout', nargs='?', default='[0.1]',
                         help='Keep probability w.r.t. node dropout (i.e., 1-dropout_ratio) for each deep layer. 1: no dropout.')
-    parser.add_argument('--mess_dropout', nargs='?', default='[0.1]',
+    parser.add_argument('--mess_dropout', nargs='?', default='[0.1, 0.1, 0.1]',
                         help='Keep probability w.r.t. message dropout (i.e., 1-dropout_ratio) for each deep layer. 1: no dropout.')
 
     parser.add_argument('--Ks', nargs='?', default='[20, 40, 60, 80, 100]',
