@@ -31,7 +31,7 @@ np.random.seed(random_seed)
 
 # set validation parameteres
 train_test_days = 30
-n_hold = 10
+n_hold = 1 #ここは後で変更する必要がある。
 topN = [5,10,20]
 
 # set DataDirectory
