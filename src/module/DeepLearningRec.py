@@ -255,7 +255,7 @@ class KGAT:
         sess = tf.Session()
         """
         sess.run(tf.global_variables_initializer())
-        feed_dict = data_generator.generate_test_feed_dict(self.model, user_ids, item_ids)
+        feed_dict = data_generator.generate_test_feed_dict(self.model, user_ids, item_ids, drop_flag=False)
         return self.model.eval(sess, feed_dict)       
     
     def predict(self, user_ids, item_ids):

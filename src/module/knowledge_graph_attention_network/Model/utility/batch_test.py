@@ -17,6 +17,21 @@ from .loader_nfm import NFM_loader
 from .loader_kgat import KGAT_loader
 from .loader_cfkg import CFKG_loader
 
+''' デバック
+from src.module.knowledge_graph_attention_network.Model.utility import metrics as metrics
+from src.module.knowledge_graph_attention_network.Model.utility.parser import parse_args
+import multiprocessing
+import heapq
+import numpy as np
+
+from src.module.knowledge_graph_attention_network.Model.utility.loader_bprmf import BPRMF_loader
+
+from src.module.knowledge_graph_attention_network.Model.utility.loader_cke import CKE_loader
+from src.module.knowledge_graph_attention_network.Model.utility.loader_nfm import NFM_loader
+from src.module.knowledge_graph_attention_network.Model.utility.loader_kgat import KGAT_loader
+from src.module.knowledge_graph_attention_network.Model.utility.loader_cfkg import CFKG_loader
+'''
+
 cores = multiprocessing.cpu_count() // 2
 
 args = parse_args()
@@ -146,6 +161,15 @@ def test_one_user(x):
 
 
 def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
+    """
+    import tensorflow as tf
+    sess = tf.Session()
+    sess.run(tf.global_variables_initializer())
+    model = kgat.model
+    users_to_test = list(data_generator.test_user_dict.keys())
+    drop_flag=False
+    batch_test_flag=False
+    """
     result = {'precision': np.zeros(len(Ks)), 'recall': np.zeros(len(Ks)), 'ndcg': np.zeros(len(Ks)),
               'hit_ratio': np.zeros(len(Ks)), 'auc': 0.}
 
@@ -169,6 +193,7 @@ def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
     count = 0
 
     for u_batch_id in range(n_user_batchs):
+        # u_batch_id = 0
         start = u_batch_id * u_batch_size
         end = (u_batch_id + 1) * u_batch_size
 
@@ -222,3 +247,12 @@ def test(sess, model, users_to_test, drop_flag=False, batch_test_flag=False):
     assert count == n_test_users
     pool.close()
     return result
+
+
+
+
+
+
+
+
+

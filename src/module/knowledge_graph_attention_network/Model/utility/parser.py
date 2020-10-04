@@ -32,9 +32,9 @@ def parse_args():
     parser.add_argument('--layer_size', nargs='?', default='[64,32,16]',
                         help='Output sizes of every layer')
 
-    parser.add_argument('--batch_size', type=int, default=1024,
+    parser.add_argument('--batch_size', type=int, default=256,
                         help='CF batch size.')
-    parser.add_argument('--batch_size_kg', type=int, default=2048,
+    parser.add_argument('--batch_size_kg', type=int, default=512,
                         help='KG batch size.')
 
 
@@ -47,7 +47,7 @@ def parse_args():
                         help='Specify a loss type from {kgat, bprmf, fm, nfm, cke, cfkg}.')
     parser.add_argument('--adj_type', nargs='?', default='si',
                         help='Specify the type of the adjacency (laplacian) matrix from {bi, si}.')
-    parser.add_argument('--alg_type', nargs='?', default='kgat',
+    parser.add_argument('--alg_type', nargs='?', default='bi',
                         help='Specify the type of the graph convolutional layer from {bi, gcn, graphsage}.')
     parser.add_argument('--adj_uni_type', nargs='?', default='sum',
                         help='Specify a loss type (uni, sum).')
