@@ -265,8 +265,17 @@ class KGAT_loader(Data):
 
         return heads, pos_r_batch, pos_t_batch, neg_t_batch
 
-    def generate_train_batch(self):
-        users, pos_items, neg_items = self._generate_train_cf_batch()
+    def generate_train_batch(self, genrate_type='default'):
+        """
+        学習データを生成する。 generate_typeによって、負例サンプリングのタイプを指定する。
+        これは新規ユーザーと新規アイテムの推薦精度を向上させるための手法である。
+        新規IDは未観測なので正例サンプリングには確実に含まれないが、負例サンプリングとしては選出される。
+        このため､新規IDは過小評価される可能性がある。
+        
+        generate_type = 'defalut' # 元の実装どおりの負例サンプリング
+        generate_type = 'only_train_interaction' # user-item のインタラクション学習の負例サンプリングは学習データ内のみとする。
+        """
+        users, pos_items, neg_items = self._generate_train_cf_batch(genrate_type)
 
         batch_data = {}
         batch_data['users'] = users

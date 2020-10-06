@@ -24,12 +24,12 @@ def parse_args():
     parser.add_argument('--epoch', type=int, default=10, #後で100に戻すべき
                         help='Number of epoch.')
 
-    parser.add_argument('--embed_size', type=int, default=64,
+    parser.add_argument('--embed_size', type=int, default=4, # original is 64
                         help='CF Embedding size.')
-    parser.add_argument('--kge_size', type=int, default=64,
+    parser.add_argument('--kge_size', type=int, default=4, # original is 64
                         help='KG Embedding size.')
     # これが attentive layer の回数となり、3次のリストが設定されれば3次先の接続までを考慮できる？
-    parser.add_argument('--layer_size', nargs='?', default='[64,32,16]',
+    parser.add_argument('--layer_size', nargs='?', default='[4,4,4]', # original is [64, 32, 16]
                         help='Output sizes of every layer')
 
     parser.add_argument('--batch_size', type=int, default=256,

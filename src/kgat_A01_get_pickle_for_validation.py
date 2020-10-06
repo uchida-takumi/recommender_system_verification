@@ -88,6 +88,8 @@ validation_arrays =  get_CF_varidation_arrays(
             random_seed=random_seed,
             topN=topN, need_fit=False
         )
+
+
 file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
 pickle.dump(validation_arrays, open(file_name, 'wb'))
 print("END on {}".format(file_name))

@@ -43,7 +43,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
 args = parse_args()
 
 class KGAT:
-    def __init__(self):
+    def __init__(self, predict_type='default'):
         """
         self = KGAT()
         data_config = config
@@ -69,13 +69,16 @@ class KGAT:
         args.use_kge = True
         """
         self.model = KGAT_(data_config=config, pretrain_data=None, args=args)
+        self.predict_type = predict_type
         # すべての変数を保存対象とする
         saver = tf.train.Saver()
         
-    def fit(self):
+    def fit(self):        
+        # 未学習アイテムを区別するために学習に含まれているアイテムを保存する
+        self.trained_item_ids = set(data_generator.train_data[:,1])
+        # self.trained_user_ids = list(data_generator.train_user_dict)
         
         t0 = time()
-
         ##############################
         # Save the model parameters.
         if args.save_flag == 1:
@@ -270,10 +273,22 @@ class KGAT:
         sess = tf.Session()
         score_matrix = self.get_score_matrix(sess, uq_user_ids, uq_item_ids)
         result = []
-        for u,i in zip(user_ids, item_ids):
-            where_u = np.where(uq_user_ids==u)[0]
-            where_i = np.where(uq_item_ids==i)[0]
-            result.append(score_matrix[where_u, where_i][0])
+        if self.predict_type == 'default':
+            for u,i in zip(user_ids, item_ids):
+                # u,i = user_ids[0], item_ids[0]
+                where_u = np.where(uq_user_ids==u)[0]
+                where_i = np.where(uq_item_ids==i)[0]
+                result.append(score_matrix[where_u, where_i][0])
+        else:
+            for u,i in zip(user_ids, item_ids):
+                # u,i = user_ids[0], item_ids[0]
+                if i in not self.trained_item_ids:
+                    result.append(0)
+                else:
+                    where_u = np.where(uq_user_ids==u)[0]
+                    where_i = np.where(uq_item_ids==i)[0]
+                    result.append(score_matrix[where_u, where_i][0])
+            
         return np.array(result)
 
 

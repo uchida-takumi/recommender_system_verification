@@ -102,11 +102,14 @@ class Data(object):
         print('[n_entities, n_relations, n_triples]=[%d, %d, %d]' % (self.n_entities, self.n_relations, self.n_triples))
         print('[batch_size, batch_size_kg]=[%d, %d]' % (self.batch_size, self.batch_size_kg))
 
-    def _generate_train_cf_batch(self):
-        if self.batch_size <= self.n_users:
-            users = rd.sample(self.exist_users, self.batch_size)
+    def _generate_train_cf_batch(self, genrate_type='default'):  
+        if genrate_type=='only_train_interaction':
+            pass #まだ仮説が不十分なため実装はしない。
         else:
-            users = [rd.choice(self.exist_users) for _ in range(self.batch_size)]
+            if self.batch_size <= self.n_users:
+                users = rd.sample(self.exist_users, self.batch_size)
+            else:
+                users = [rd.choice(self.exist_users) for _ in range(self.batch_size)]
 
         def sample_pos_items_for_u(u, num):
             pos_items = self.train_user_dict[u]
