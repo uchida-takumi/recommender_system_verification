@@ -60,6 +60,7 @@ random_user_ids = np.random.choice(train_user_ids, size=100000)
 random_item_ids = np.random.choice(train_item_ids, size=100000)
 
 #  各種スコアを確認する
+print(' === default prediction ===')
 train_predicted = self.predict(train_user_ids, train_item_ids)
 print( pd.DataFrame(train_predicted).describe() )
 test_predicted = self.predict(test_user_ids, test_item_ids)
@@ -67,6 +68,11 @@ print( pd.DataFrame(test_predicted).describe() )
 random_predicted = self.predict(random_user_ids, random_item_ids)
 print( pd.DataFrame(random_predicted).describe() )
 """ test のスコアがrandom よりも低いといえる """
+
+self.predict_type = 'new_item_is_0'
+self.predict_type = 'default'
+test_predicted = self.predict(test_user_ids, test_item_ids)
+
 
 # どのテストサンプルの結果が悪かったか、分析するためにテストサンプルに情報を付加する。
 user_info = train_rating.groupby(by='UserID').agg({'MovieID':len,'Rating':np.mean})

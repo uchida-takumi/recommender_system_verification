@@ -282,7 +282,7 @@ class KGAT:
         else:
             for u,i in zip(user_ids, item_ids):
                 # u,i = user_ids[0], item_ids[0]
-                if i in not self.trained_item_ids:
+                if i not in self.trained_item_ids:
                     result.append(0)
                 else:
                     where_u = np.where(uq_user_ids==u)[0]
