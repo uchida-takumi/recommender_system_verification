@@ -21,15 +21,15 @@ def parse_args():
                         help='0: No pretrain, -1: Pretrain with the learned embeddings, 1:Pretrain with stored models.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Interval of evaluation.')
-    parser.add_argument('--epoch', type=int, default=10, #後で100に戻すべき
+    parser.add_argument('--epoch', type=int, default=100, #後で100に戻すべき
                         help='Number of epoch.')
 
-    parser.add_argument('--embed_size', type=int, default=4, # original is 64
+    parser.add_argument('--embed_size', type=int, default=64, # original is 64
                         help='CF Embedding size.')
-    parser.add_argument('--kge_size', type=int, default=4, # original is 64
+    parser.add_argument('--kge_size', type=int, default=64, # original is 64
                         help='KG Embedding size.')
     # これが attentive layer の回数となり、3次のリストが設定されれば3次先の接続までを考慮できる？
-    parser.add_argument('--layer_size', nargs='?', default='[4,4,4]', # original is [64, 32, 16]
+    parser.add_argument('--layer_size', nargs='?', default='[64,32,16]', # original is [64, 32, 16]
                         help='Output sizes of every layer')
 
     parser.add_argument('--batch_size', type=int, default=256,
