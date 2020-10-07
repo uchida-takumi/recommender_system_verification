@@ -88,10 +88,24 @@ validation_arrays =  get_CF_varidation_arrays(
             random_seed=random_seed,
             topN=topN, need_fit=False
         )
-
-
 file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
 pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+# 新規アイテムの予測スコアを0にする予測方法
+kgat.predict_type = 'predict_new_item_0'
+model_name = 'kgat-new-item0'
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            kgat,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
 print("END on {}".format(file_name))
 
 

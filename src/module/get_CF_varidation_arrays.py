@@ -138,18 +138,19 @@ def get_CF_varidation_arrays(
     bulk_predicted = np.array(model.predict(bulk_user_ids, bulk_item_ids, **fit_args))        
 
     print('予測結果のhitを計算する')
-    n_max_iter = len(test_good_user_ids)
+    n_max_iter = bulk_iters.max() 
     n_iter = 0     
     set_iters = set(bulk_iters)       
-    for _iter in set_iters:
-        n_iter += 1
-        if n_iter % 100 == 0:
-            print(f'get_CF_Varidation_array: {n_iter}/{n_max_iter}')
+    for _iter in range(n_max_iter):
+        if (_iter+1) % 100 == 0:
+            print(f'get_CF_Varidation_array: {_iter+1}/{n_max_iter}')
         
         indexes = bulk_iters == _iter
 
         _predicted = bulk_predicted[indexes]
-        _item_ids = bulk_item_ids[indexes]
+        _item_ids = bulk_item_ids[indexes] # 前の処理で、正解のitem_idは最後に格納されている。
+        answer_item_id = _item_ids[-1]
+
         item_ids__predicted = np.concatenate([_item_ids.reshape(-1,1), _predicted.reshape(-1,1)], axis=1)
         
         # sort by random shuffle
@@ -161,7 +162,7 @@ def get_CF_varidation_arrays(
         # set the result in test_good_result.
         for tN in test_good_result:
             item_ids_in_topN = item_ids__predicted[:tN, 0]                
-            if item_id in item_ids_in_topN:
+            if answer_item_id in item_ids_in_topN:
                 hit = 1
             else:
                 hit = 0    
@@ -198,9 +199,9 @@ if __name__ == 'How to use':
     import numpy as np
     import re
     # INPUTs
-    user_ids = np.random.choice(range(100), size=500)
-    item_ids = np.random.choice(range(20),  size=500)
-    values   = np.random.choice(range(6),   size=500)
+    train_user_ids = np.random.choice(range(100), size=500)
+    train_item_ids = np.random.choice(range(20),  size=500)
+    train_values   = np.random.choice(range(6),   size=500)
 
     test_user_ids = np.random.choice(range(100), size=500)
     test_item_ids = np.random.choice(range(20),  size=500)
@@ -216,7 +217,7 @@ if __name__ == 'How to use':
     model = random_model()        
     
     result_dict = get_CF_varidation_arrays(
-                                        user_ids, item_ids, values
+                                        train_user_ids, train_item_ids, train_values
                                        ,test_user_ids, test_item_ids, test_values
                                        ,model
                                        ,good_score_threshold=5

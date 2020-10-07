@@ -40,7 +40,7 @@ np.random.seed(random_seed)
 
 # set validation parameteres
 train_test_days = 30
-n_hold = 10
+n_hold = 1
 topN = [5,10,20]
 
 ############################
@@ -98,23 +98,23 @@ my_contentboosted = ContentBoostedCF(pure_content_predictor=my_contentbased)
 
 models = {
         #"svd": svd,
-        "userbased": userbased,
-        "itembased": itembased,
-        "randommodel": randommodel,
+        #"userbased": userbased,
+        #"itembased": itembased,
+        #"randommodel": randommodel,
         #"two_way_aspect_Z050": two_way_aspect_model(item_attributes=item_attributes, Z=50,),
         #"two_way_aspect_Z100": two_way_aspect_model(item_attributes=item_attributes, Z=100,),
         #"two_way_aspect_Z200": two_way_aspect_model(item_attributes=item_attributes, Z=200,),
         #"two_way_aspect_Z400": two_way_aspect_model(item_attributes=item_attributes, Z=400,),
-        "mf_item_attributes": mf_item_attributes,
-        "my_mf_010": MF(n_latent_factor=10),
-        "my_mf_050": MF(n_latent_factor=50),
-        "my_mf_100": MF(n_latent_factor=100),
+        #"mf_item_attributes": mf_item_attributes,
+        #"my_mf_010": MF(n_latent_factor=10),
+        #"my_mf_050": MF(n_latent_factor=50),
+        #"my_mf_100": MF(n_latent_factor=100),
         "my_mf_200": MF(n_latent_factor=200),
         #"my_contentbased": my_contentbased,
         #"my_contentboosted": my_contentboosted,
         #"RankingListMean": RankingListMean(),
-        "RankingListTotal": RankingListTotal(),
-        #"RankingListCnt": RankingListCnt(),
+        #"RankingListTotal": RankingListTotal(),
+        "RankingListCnt": RankingListCnt(),
         }
 
 # --- varidation ---

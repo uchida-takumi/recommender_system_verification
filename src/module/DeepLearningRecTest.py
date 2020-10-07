@@ -136,9 +136,6 @@ item_embed.to_csv('check_item_embed.csv', index=False)
 
 
 
-
-
-
 if __name__ == 'how_to_use_this':
     import tensorflow as tf
     from src.module.DeepLearningRecTest import tfclass
