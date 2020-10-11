@@ -11,6 +11,7 @@ import pickle
 import os
 import sys
 import random
+import copy
 from collections import defaultdict
 from sklearn import preprocessing
 
@@ -31,7 +32,7 @@ np.random.seed(random_seed)
 
 # set validation parameteres
 train_test_days = 30
-n_hold = 1 #ここは後で変更する必要がある。
+n_hold = 60 #ここは後で変更する必要がある。
 topN = [5,10,20]
 
 # set DataDirectory
@@ -101,6 +102,7 @@ Genres = [g for g in sorted(list(Genres)) if g!='(no genres listed)']
 get_attributes = lambda genres: [int(Ge in genres.split('|')) for Ge in Genres]
 item_attributes = {row['MovieID']:get_attributes(row['Genres']) for idx, row in movie.iterrows()}
 item_attributes = {i:list(np.where(np.array(l)==1)[0]) for i,l in item_attributes.items()}
+item_attributes_0index = copy.deepcopy(item_attributes)
 ## ジャンルのIDはitemエンティティのID番号の追加で生成する。（エンティティ集合として扱う）
 item_attributes = {i:[l+1+max_item_id for l in L] for i,L in item_attributes.items()}
 
@@ -122,6 +124,11 @@ filename = os.path.join(DIR_SAVE, 'train_rating.csv')
 train_rating.to_csv(filename, index=False)
 filename = os.path.join(DIR_SAVE, 'test_rating.csv')
 test_rating.to_csv(filename, index=False)
+
+#######################################
+# ジャンル情報を保存
+filename = os.path.join(DIR_SAVE, 'genre.pickle')
+pickle.dump(item_attributes_0index, open(filename, 'wb'))
 
 ########################################
 # 出力設定ファイルを出力

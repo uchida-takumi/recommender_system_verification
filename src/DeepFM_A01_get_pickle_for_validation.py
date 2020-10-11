@@ -21,10 +21,6 @@ import pickle
 from src.module import util
 from src.module.get_CF_varidation_arrays import get_CF_varidation_arrays
 
-DIR_DATA = 'src/module/knowledge_graph_attention_network/Data/ml'
-DIR_output = 'pickle'
-
-
 ############################
 # Set validable
 random_seed = 12345
@@ -33,14 +29,12 @@ random_seed = 12345
 random.seed(random_seed)
 np.random.seed(random_seed)
 
-model_name = 'kgat'
-train_test_days = 30
 topN = [5,10,20]
-
+DIR_DATA = 'src/module/knowledge_graph_attention_network/Data/ml'
 config = pickle.load(open(os.path.join(DIR_DATA, 'config.pickle'), 'rb'))
 k_hold = config['k_hold']
-
-
+#train_test_days = config['train_test_days']
+train_test_days = 30
 ############################
 # Read DataSet
 # データセットはすでに分離しているため処理を省略する
@@ -56,33 +50,41 @@ pass
 
 ####################################
 # --- Set models ---
-# 
+ 
 # DeepLearningRecをimportした時点で、kgat_data_set.pyが出力した学習セットを読み込んでいるので、そのまま学習が可能。
-from src.module.KGAT import KGAT
-kgat = KGAT()
-kgat.fit()
+from src.module.DeepFM import DeepFM
+import pandas as pd
+
+DIR_output = 'pickle'
+DIR_DATA = 'src/module/knowledge_graph_attention_network/Data/ml'
+df_train = pd.read_csv(os.path.join(DIR_DATA, 'train_rating.csv'))
+df_test = pd.read_csv(os.path.join(DIR_DATA, 'test_rating.csv'))
+
+train_user_ids = df_train['UserID']
+train_item_ids = df_train['MovieID']
+train_values   = df_train['Rating']
+test_user_ids  = df_test['UserID']
+test_item_ids  = df_test['MovieID']
+test_values    = df_test['Rating']
+
+set_train_test_users = set(np.concatenate([train_user_ids, test_user_ids]))
+set_train_test_items = set(np.concatenate([train_item_ids, test_item_ids]))
+dict_genre = pickle.load(open(os.path.join(DIR_DATA, 'genre.pickle'), 'rb'))
+
+
 
 ####################################
 # --- varidation ---
-
 n_random_selected_item_ids = 1000
 
-filename = os.path.join(DIR_DATA, 'train_rating.csv')
-train_rating = pd.read_csv(filename)
-filename = os.path.join(DIR_DATA, 'test_rating.csv')
-test_rating = pd.read_csv(filename)
-
-train_user_ids = train_rating['UserID']
-train_item_ids = train_rating['MovieID']
-train_values   = train_rating['Rating']
-test_user_ids = test_rating['UserID']
-test_item_ids = test_rating['MovieID']
-test_values   = test_rating['Rating']
-
+model_name = 'deepfm_genre'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre)
+#model.dfm_params['epoch'] = 5
+model.fit(df_train['UserID'], df_train['UserID'], df_train['Rating'])
 validation_arrays =  get_CF_varidation_arrays(
             train_user_ids, train_item_ids, train_values,
             test_user_ids, test_item_ids, test_values,
-            kgat,
+            model,
             n_random_selected_item_ids=n_random_selected_item_ids,
             remove_still_interaction_from_test=True,
             random_seed=random_seed,
@@ -91,13 +93,16 @@ validation_arrays =  get_CF_varidation_arrays(
 file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
 pickle.dump(validation_arrays, open(file_name, 'wb'))
 
-# 新規アイテムの予測スコアを0にする予測方法
-kgat.predict_type = 'predict_new_item_0'
-model_name = 'kgat-new-item0'
+
+# ジャンル情報なし
+model_name = 'deepfm'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None)
+#model.dfm_params['epoch'] = 5
+model.fit(df_train['UserID'], df_train['UserID'], df_train['Rating'])
 validation_arrays =  get_CF_varidation_arrays(
             train_user_ids, train_item_ids, train_values,
             test_user_ids, test_item_ids, test_values,
-            kgat,
+            model,
             n_random_selected_item_ids=n_random_selected_item_ids,
             remove_still_interaction_from_test=True,
             random_seed=random_seed,

@@ -23,7 +23,9 @@ def main():
     
     frame = []
     for pickle_file in pickle_file_list:
+        print(pickle_file)
         for q in Q:
+            print(q)
             frame.append(parse(pickle_file, q))
     
     result = pd.concat(frame, ignore_index=True)
@@ -151,6 +153,10 @@ def convert_df(dict_metrix, **keyargs):
     return df_
 
 def common_process(vr, user_ids=None, item_ids=None):
+    """
+    user_ids = dict_user_ids[user_key]
+    item_ids = dict_item_ids[item_key]
+    """
     bo_index     = np.array([True]*vr['test_item_ids'].shape[0])
     bo_hit_index = np.array([True]*vr['test_good_item_ids'].shape[0])
     if user_ids is not None:

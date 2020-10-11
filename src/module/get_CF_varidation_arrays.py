@@ -139,9 +139,8 @@ def get_CF_varidation_arrays(
 
     print('予測結果のhitを計算する')
     n_max_iter = bulk_iters.max() 
-    n_iter = 0     
     set_iters = set(bulk_iters)       
-    for _iter in range(n_max_iter):
+    for _iter in range(n_max_iter + 1):
         if (_iter+1) % 100 == 0:
             print(f'get_CF_Varidation_array: {_iter+1}/{n_max_iter}')
         
