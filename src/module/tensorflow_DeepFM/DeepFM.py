@@ -26,7 +26,10 @@ class DeepFM(BaseEstimator, TransformerMixin):
                  verbose=False, random_seed=2016,
                  use_fm=True, use_deep=True,
                  loss_type="logloss", eval_metric=roc_auc_score,
-                 l2_reg=0.0, greater_is_better=True):
+                 l2_reg=0.0, l2_reg_embedding=0.0, l2_reg_bias=0.0,
+                 greater_is_better=True,
+                 global_mean_bias_init = 0.01, first_half_fit_only_fm = False
+                 ):
         assert (use_fm or use_deep)
         assert loss_type in ["logloss", "mse"], \
             "loss_type can be either 'logloss' for classification task or 'mse' for regression task"
@@ -42,6 +45,8 @@ class DeepFM(BaseEstimator, TransformerMixin):
         self.use_fm = use_fm
         self.use_deep = use_deep
         self.l2_reg = l2_reg
+        self.l2_reg_embedding = l2_reg_embedding
+        self.l2_reg_bias = l2_reg_bias
 
         self.epoch = epoch
         self.batch_size = batch_size
@@ -57,6 +62,12 @@ class DeepFM(BaseEstimator, TransformerMixin):
         self.eval_metric = eval_metric
         self.greater_is_better = greater_is_better
         self.train_result, self.valid_result = [], []
+        
+        if loss_type == "logloss":
+            self.global_mean_bias_init = 0.01
+        else:
+            self.global_mean_bias_init = global_mean_bias_init
+        self.first_half_fit_only_fm = first_half_fit_only_fm
 
         self._init_graph()
 
@@ -120,13 +131,24 @@ class DeepFM(BaseEstimator, TransformerMixin):
             elif self.use_deep:
                 concat_input = self.y_deep
             self.out = tf.add(tf.matmul(concat_input, self.weights["concat_projection"]), self.weights["concat_bias"])
-
+            
+            # ----- 学習epochの前半でFM層だけを学習するための出力定義を行う -----
+            if self.use_fm and self.use_deep and self.first_half_fit_only_fm:
+                concat_input_fm = tf.concat([self.y_first_order, self.y_second_order], axis=1)
+                self.out_only_fm = tf.add(tf.matmul(concat_input_fm, self.weights["concat_projection"][:self.field_size + self.embedding_size,:]), self.weights["concat_bias"])
+            
             # loss
             if self.loss_type == "logloss":
                 self.out = tf.nn.sigmoid(self.out)
                 self.loss = tf.losses.log_loss(self.label, self.out)
+                if self.use_fm and self.use_deep and self.first_half_fit_only_fm:
+                    self.out_only_fm = tf.nn.sigmoid(self.out_only_fm)
+                    self.loss_only_fm = tf.losses.log_loss(self.label, self.out_only_fm)                
             elif self.loss_type == "mse":
                 self.loss = tf.nn.l2_loss(tf.subtract(self.label, self.out))
+                if self.use_fm and self.use_deep and self.first_half_fit_only_fm:
+                    self.loss_only_fm = tf.nn.l2_loss(tf.subtract(self.label, self.out_only_fm))
+
             # l2 regularization on weights
             if self.l2_reg > 0:
                 self.loss += tf.contrib.layers.l2_regularizer(
@@ -135,6 +157,10 @@ class DeepFM(BaseEstimator, TransformerMixin):
                     for i in range(len(self.deep_layers)):
                         self.loss += tf.contrib.layers.l2_regularizer(
                             self.l2_reg)(self.weights["layer_%d"%i])
+                # --START[内田] 学習epochの前半でFM層だけを学習するための定義を行う
+                if self.use_fm and self.use_deep and self.first_half_fit_only_fm:
+                    self.loss_only_fm += tf.contrib.layers.l2_regularizer(
+                        self.l2_reg)(self.weights["concat_projection"])
 
             # optimizer
             if self.optimizer_type == "adam":
@@ -148,11 +174,23 @@ class DeepFM(BaseEstimator, TransformerMixin):
             elif self.optimizer_type == "momentum":
                 self.optimizer = tf.train.MomentumOptimizer(learning_rate=self.learning_rate, momentum=0.95).minimize(
                     self.loss)
+            elif self.optimizer_type == "sgd":
+                self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(
+                    self.loss)
+                
             """
             elif self.optimizer_type == "yellowfin":
                 self.optimizer = YFOptimizer(learning_rate=self.learning_rate, momentum=0.0).minimize(
                     self.loss)
             """
+            if self.use_fm and self.use_deep and self.first_half_fit_only_fm:
+                """
+                self.optimizer_only_fm = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999,
+                                                        epsilon=1e-8).minimize(self.loss_only_fm)
+                """
+                self.optimizer_only_fm = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(
+                    self.loss)
+                
 
             # init
             self.saver = tf.train.Saver()
@@ -186,7 +224,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
             tf.random_normal([self.feature_size, self.embedding_size], 0.0, 0.01),
             name="feature_embeddings")  # feature_size * K
         weights["feature_bias"] = tf.Variable(
-            tf.random_uniform([self.feature_size, 1], 0.0, 1.0), name="feature_bias")  # feature_size * 1
+            tf.random_uniform([self.feature_size, 1], 0.0, 0.1), name="feature_bias")  # feature_size * 1
 
         # deep layers
         num_layer = len(self.deep_layers)
@@ -216,7 +254,8 @@ class DeepFM(BaseEstimator, TransformerMixin):
         weights["concat_projection"] = tf.Variable(
                         np.random.normal(loc=0, scale=glorot, size=(input_size, 1)),
                         dtype=np.float32)  # layers[i-1]*layers[i]
-        weights["concat_bias"] = tf.Variable(tf.constant(0.01), dtype=np.float32)
+        #weights["concat_bias"] = tf.Variable(tf.constant(0.01), dtype=np.float32)
+        weights["concat_bias"] = tf.Variable(tf.constant(self.global_mean_bias_init), dtype=np.float32) # 内田が変更した箇所
 
         return weights
 
@@ -247,14 +286,17 @@ class DeepFM(BaseEstimator, TransformerMixin):
         np.random.shuffle(c)
 
 
-    def fit_on_batch(self, Xi, Xv, y):
+    def fit_on_batch(self, Xi, Xv, y, phase=None):
         feed_dict = {self.feat_index: Xi,
                      self.feat_value: Xv,
                      self.label: y,
                      self.dropout_keep_fm: self.dropout_fm,
                      self.dropout_keep_deep: self.dropout_deep,
                      self.train_phase: True}
-        loss, opt = self.sess.run((self.loss, self.optimizer), feed_dict=feed_dict)
+        if phase == 'only_fm':
+            loss, opt = self.sess.run((self.loss_only_fm, self.optimizer_only_fm), feed_dict=feed_dict)
+        else:
+            loss, opt = self.sess.run((self.loss, self.optimizer), feed_dict=feed_dict)
         return loss
 
 
@@ -282,7 +324,13 @@ class DeepFM(BaseEstimator, TransformerMixin):
             total_batch = int(len(y_train) / self.batch_size)
             for i in range(total_batch):
                 Xi_batch, Xv_batch, y_batch = self.get_batch(Xi_train, Xv_train, y_train, self.batch_size, i)
-                self.fit_on_batch(Xi_batch, Xv_batch, y_batch)
+                if self.use_fm and self.use_deep and self.first_half_fit_only_fm:
+                    if epoch < int(self.epoch/2):
+                        self.fit_on_batch(Xi_batch, Xv_batch, y_batch, phase='only_fm')
+                    else:
+                        self.fit_on_batch(Xi_batch, Xv_batch, y_batch)
+                else:
+                    self.fit_on_batch(Xi_batch, Xv_batch, y_batch)
 
             # evaluate training and validation datasets
             train_result = self.evaluate(Xi_train, Xv_train, y_train)
@@ -298,6 +346,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
                     print("[%d] train-result=%.4f [%.1f s]"
                         % (epoch + 1, train_result, time() - t1))
             if has_valid and early_stopping and self.training_termination(self.valid_result):
+                print('break')
                 break
 
         # fit a few more epoch on train+valid until result reaches the best_train_score

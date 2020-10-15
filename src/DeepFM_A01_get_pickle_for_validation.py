@@ -55,7 +55,7 @@ pass
 from src.module.DeepFM import DeepFM
 import pandas as pd
 
-DIR_output = 'pickle'
+DIR_output = 'pickle2'
 DIR_DATA = 'src/module/knowledge_graph_attention_network/Data/ml'
 df_train = pd.read_csv(os.path.join(DIR_DATA, 'train_rating.csv'))
 df_test = pd.read_csv(os.path.join(DIR_DATA, 'test_rating.csv'))
@@ -77,28 +77,18 @@ dict_genre = pickle.load(open(os.path.join(DIR_DATA, 'genre.pickle'), 'rb'))
 # --- varidation ---
 n_random_selected_item_ids = 1000
 
-model_name = 'deepfm_genre'
-model = DeepFM(set_train_test_users, set_train_test_items, dict_genre)
-#model.dfm_params['epoch'] = 5
-model.fit(df_train['UserID'], df_train['UserID'], df_train['Rating'])
-validation_arrays =  get_CF_varidation_arrays(
-            train_user_ids, train_item_ids, train_values,
-            test_user_ids, test_item_ids, test_values,
-            model,
-            n_random_selected_item_ids=n_random_selected_item_ids,
-            remove_still_interaction_from_test=True,
-            random_seed=random_seed,
-            topN=topN, need_fit=False
-        )
-file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
-pickle.dump(validation_arrays, open(file_name, 'wb'))
+model_name = 'deepfm_ctr_all_rating'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre, ctr_prediction=True)
+model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['batch_size'] = 128
+model.dfm_params['loss_type'] = 'logloss'
 
+train_user_ids_ctr = list(train_user_ids) + list(np.random.choice(list(set(train_user_ids)), size=len(train_user_ids)))
+train_item_ids_ctr = list(train_item_ids) + list(np.random.choice(list(set(train_item_ids)), size=len(train_item_ids)))
+train_values_ctr   = [1]*len(train_user_ids) + [0]*len(train_user_ids)
 
-# ジャンル情報なし
-model_name = 'deepfm'
-model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None)
-#model.dfm_params['epoch'] = 5
-model.fit(df_train['UserID'], df_train['UserID'], df_train['Rating'])
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
             train_user_ids, train_item_ids, train_values,
             test_user_ids, test_item_ids, test_values,
@@ -112,6 +102,178 @@ file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}_
 pickle.dump(validation_arrays, open(file_name, 'wb'))
 
 print("END on {}".format(file_name))
+
+# ----------
+model_name = 'deepfm_ctr_all_rating_no_genre'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_prediction=True)
+model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['batch_size'] = 128
+model.dfm_params['loss_type'] = 'logloss'
+
+train_user_ids_ctr = list(train_user_ids) + list(np.random.choice(list(set(train_user_ids)), size=len(train_user_ids)))
+train_item_ids_ctr = list(train_item_ids) + list(np.random.choice(list(set(train_item_ids)), size=len(train_item_ids)))
+train_values_ctr   = [1]*len(train_user_ids) + [0]*len(train_user_ids)
+
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            model,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+print("END on {}".format(file_name))
+
+# ----------
+
+model_name = 'deepfm_ctr_5score_rateing'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre, ctr_prediction=True)
+model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['batch_size'] = 64
+model.dfm_params['loss_type'] = 'logloss'
+
+indexes = (train_values == train_values.max()).values
+size = indexes.sum()
+train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
+train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
+train_values_ctr   = [1]*size + [0]*size
+
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            model,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+print("END on {}".format(file_name))
+
+# ----------
+
+model_name = 'deepfm_ctr_5score_rateing_no_genre'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_prediction=True)
+model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['batch_size'] = 64
+model.dfm_params['loss_type'] = 'logloss'
+
+indexes = (train_values == train_values.max()).values
+size = indexes.sum()
+train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
+train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
+train_values_ctr   = [1]*size + [0]*size
+
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            model,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+print("END on {}".format(file_name))
+
+
+# ---------- ここからrating学習
+model_name = 'deepfm'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=dict_genre, ctr_prediction=False)
+model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['batch_size'] = 128
+model.dfm_params['loss_type'] = 'mse'
+model.dfm_params['optimizer_type'] = 'sgd'
+
+indexes = (train_values == train_values.max()).values
+size = indexes.sum()
+train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
+train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
+train_values_ctr   = [1]*size + [0]*size
+
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            model,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+print("END on {}".format(file_name))
+
+# ---------- 
+
+model_name = 'deepfm_no_genre'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_prediction=False)
+model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['batch_size'] = 128
+model.dfm_params['loss_type'] = 'mse'
+model.dfm_params['optimizer_type'] = 'sgd'
+
+indexes = (train_values == train_values.max()).values
+size = indexes.sum()
+train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
+train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
+train_values_ctr   = [1]*size + [0]*size
+
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            model,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+print("END on {}".format(file_name))
+
+
+"""
+#################
+# 学習結果の重み出力
+import collections
+
+feature_bias = model.model.sess.run(model.model.weights["feature_bias"])
+feature_embeddings = model.model.sess.run(model.model.weights["feature_embeddings"])
+
+bias = pd.DataFrame(feature_bias).reset_index()
+max_user_id = max(set_train_test_users)
+max_item_id = max(set_train_test_users) + 1 + max(set_train_test_items)
+re_items = train_item_ids + max_user_id + 1
+
+bias.loc[bias.index<=max_item_id, 'feature_type'] = 'item'
+bias.loc[bias.index<=max_user_id, 'feature_type'] = 'user'
+
+cnt_dict = collections.Counter(np.concatenate([train_user_ids, re_items]))
+bias['cnt'] = [cnt_dict.get(i) for i in bias.index]
+
+bias.to_csv('check.csv', index=False)    
+"""
 
 
 

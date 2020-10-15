@@ -22,10 +22,12 @@ from src.module.two_way_aspect_model import two_way_aspect_model
 from src.module.MF import MF
 from src.module.ContentBoostedCF import ContentBoostedCF
 from src.module.RankingList import RankingListMean, RankingListTotal, RankingListCnt
+from src.module.DeepFM import DeepFM
 from surprise import SVD # SVD algorithm
 from surprise import KNNBasic # A basic collaborative filtering algorithm.
 from surprise import BaselineOnly # Algorithm predicting the baseline estimate for given user and item.
 from surprise import NormalPredictor # Algorithm predicting a random rating
+
 
 ############################
 # Set validable
@@ -90,8 +92,6 @@ userbased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':True, 'name':'
 itembased = algo_wrapper(KNNBasic(k=50, sim_options={'user_based':False, 'name':'cosine'}))
 randommodel = algo_wrapper(NormalPredictor())
 mf_item_attributes = MF(n_latent_factor=100)
-
-
 #my_contentbased = ContentBasedCF()
 my_contentbased = MF(n_latent_factor=0)
 my_contentboosted = ContentBoostedCF(pure_content_predictor=my_contentbased)
