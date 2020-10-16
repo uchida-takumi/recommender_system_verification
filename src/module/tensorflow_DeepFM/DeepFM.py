@@ -157,10 +157,18 @@ class DeepFM(BaseEstimator, TransformerMixin):
                     for i in range(len(self.deep_layers)):
                         self.loss += tf.contrib.layers.l2_regularizer(
                             self.l2_reg)(self.weights["layer_%d"%i])
-                # --START[内田] 学習epochの前半でFM層だけを学習するための定義を行う
+                        self.loss += tf.contrib.layers.l2_regularizer(
+                            self.l2_reg_bias)(self.weights["feature_bias"])
+                        self.loss += tf.contrib.layers.l2_regularizer(
+                            self.l2_reg_embedding)(self.weights["feature_embeddings"])
                 if self.use_fm and self.use_deep and self.first_half_fit_only_fm:
                     self.loss_only_fm += tf.contrib.layers.l2_regularizer(
                         self.l2_reg)(self.weights["concat_projection"])
+                    self.loss_only_fm += tf.contrib.layers.l2_regularizer(
+                        self.l2_reg_bias)(self.weights["feature_bias"])
+                    self.loss_only_fm += tf.contrib.layers.l2_regularizer(
+                        self.l2_reg_embedding)(self.weights["feature_embeddings"])
+
 
             # optimizer
             if self.optimizer_type == "adam":

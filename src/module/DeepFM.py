@@ -93,6 +93,8 @@ class DeepFM:
             "batch_norm": 1,
             "batch_norm_decay": 0.995,
             "l2_reg": 0.0001,
+            "l2_reg_embedding": 0.0001,
+            "l2_reg_bias": 0.0001,
             "verbose": True,
             "eval_metric": mean_absolute_error,
             "greater_is_better": False, # 学習における損失スコアが大きい方が良いかどうか
@@ -703,4 +705,27 @@ if __name__ == 'how to use it.':
     sess.run(op)
     sess.run(weight)
     
+    ########################
+    # 上手く行かなかったので、テスト
+    self = DeepFM(list(range(n_user+1)), list(range(n_item+1)), first_half_fit_only_fm=True, ctr_prediction=True)
+    self.dfm_params['epoch'] = 5
+    self.dfm_params['embedding_size'] = 4
+    self.dfm_params['deep_layers'] = [16, 16]
+    self.dfm_params['l2_reg'] = 0.0050
+    self.dfm_params['l2_reg_embedding'] = 0.001
+    self.dfm_params['l2_reg_bias'] = 0.001
+    self.dfm_params['learning_rate'] = 0.0010
+    self.dfm_params['use_deep'] = True
+    self.dfm_params['batch_size'] = 32
+    self.dfm_params['loss_type'] = 'mse'
+    self.dfm_params['optimizer_type'] = 'sgd'
+    
+    self.fit(users, items, ratings)
+    
+    feature_embeddings = self.model.sess.run(self.model.weights["feature_embeddings"])
+    feature_bias = self.model.sess.run(self.model.weights["feature_bias"])
+    concat_bias = self.model.sess.run(self.model.weights["concat_bias"])
+
+    pd.DataFrame(feature_embeddings).plot() 
+    pd.DataFrame(feature_bias).plot() 
     

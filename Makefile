@@ -39,3 +39,8 @@ docker-run-B10:
 	docker run --rm -d -v $(ROOT_DIR):/docker-work \
 		hoge:latest \
 		python3 -m src.B10_topN_dispersion
+		
+docker-run-bash:
+	docker run --rm -v $(ROOT_DIR):/docker-work -it \
+		hoge:latest \
+		/bin/bash

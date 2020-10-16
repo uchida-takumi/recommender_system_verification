@@ -77,17 +77,14 @@ dict_genre = pickle.load(open(os.path.join(DIR_DATA, 'genre.pickle'), 'rb'))
 # --- varidation ---
 n_random_selected_item_ids = 1000
 
-model_name = 'deepfm_ctr_all_rating'
+
+model_name = 'dfm_ctr_genre'
 model = DeepFM(set_train_test_users, set_train_test_items, dict_genre, ctr_prediction=True)
 model.dfm_params['l2_reg'] = 0.0010
 model.dfm_params['learning_rate'] = 0.0010
 model.dfm_params['batch_size'] = 128
 model.dfm_params['loss_type'] = 'logloss'
 
-train_user_ids_ctr = list(train_user_ids) + list(np.random.choice(list(set(train_user_ids)), size=len(train_user_ids)))
-train_item_ids_ctr = list(train_item_ids) + list(np.random.choice(list(set(train_item_ids)), size=len(train_item_ids)))
-train_values_ctr   = [1]*len(train_user_ids) + [0]*len(train_user_ids)
-
 model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
             train_user_ids, train_item_ids, train_values,
@@ -104,17 +101,13 @@ pickle.dump(validation_arrays, open(file_name, 'wb'))
 print("END on {}".format(file_name))
 
 # ----------
-model_name = 'deepfm_ctr_all_rating_no_genre'
+model_name = 'dfm_ctr'
 model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_prediction=True)
 model.dfm_params['l2_reg'] = 0.0010
 model.dfm_params['learning_rate'] = 0.0010
 model.dfm_params['batch_size'] = 128
 model.dfm_params['loss_type'] = 'logloss'
 
-train_user_ids_ctr = list(train_user_ids) + list(np.random.choice(list(set(train_user_ids)), size=len(train_user_ids)))
-train_item_ids_ctr = list(train_item_ids) + list(np.random.choice(list(set(train_item_ids)), size=len(train_item_ids)))
-train_values_ctr   = [1]*len(train_user_ids) + [0]*len(train_user_ids)
-
 model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
             train_user_ids, train_item_ids, train_values,
@@ -132,7 +125,7 @@ print("END on {}".format(file_name))
 
 # ----------
 
-model_name = 'deepfm_ctr_5score_rateing'
+model_name = 'dfm_ctr_only5score_genre'
 model = DeepFM(set_train_test_users, set_train_test_items, dict_genre, ctr_prediction=True)
 model.dfm_params['l2_reg'] = 0.0010
 model.dfm_params['learning_rate'] = 0.0010
@@ -140,14 +133,9 @@ model.dfm_params['batch_size'] = 64
 model.dfm_params['loss_type'] = 'logloss'
 
 indexes = (train_values == train_values.max()).values
-size = indexes.sum()
-train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
-train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
-train_values_ctr   = [1]*size + [0]*size
-
-model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+model.fit(train_user_ids[indexes], train_item_ids[indexes], train_values[indexes], test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
-            train_user_ids, train_item_ids, train_values,
+            train_user_ids[indexes], train_item_ids[indexes], train_values[indexes],
             test_user_ids, test_item_ids, test_values,
             model,
             n_random_selected_item_ids=n_random_selected_item_ids,
@@ -162,7 +150,7 @@ print("END on {}".format(file_name))
 
 # ----------
 
-model_name = 'deepfm_ctr_5score_rateing_no_genre'
+model_name = 'dfm_ctr_only5score'
 model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_prediction=True)
 model.dfm_params['l2_reg'] = 0.0010
 model.dfm_params['learning_rate'] = 0.0010
@@ -170,14 +158,9 @@ model.dfm_params['batch_size'] = 64
 model.dfm_params['loss_type'] = 'logloss'
 
 indexes = (train_values == train_values.max()).values
-size = indexes.sum()
-train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
-train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
-train_values_ctr   = [1]*size + [0]*size
-
-model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+model.fit(train_user_ids[indexes], train_item_ids[indexes], train_values[indexes], test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
-            train_user_ids, train_item_ids, train_values,
+            train_user_ids[indexes], train_item_ids[indexes], train_values[indexes],
             test_user_ids, test_item_ids, test_values,
             model,
             n_random_selected_item_ids=n_random_selected_item_ids,
@@ -191,20 +174,21 @@ pickle.dump(validation_arrays, open(file_name, 'wb'))
 print("END on {}".format(file_name))
 
 
-# ---------- ここからrating学習
-model_name = 'deepfm'
+
+# ---------- ここからrating学習: 最終的には sgd + bias, embedding r2_regの追加が正解でした
+model_name = 'dfm_rating_genre'
 model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=dict_genre, ctr_prediction=False)
-model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['epoch'] = 5
+model.dfm_params['embedding_size'] = 4
+model.dfm_params['deep_layers'] = [16, 16]
+model.dfm_params['l2_reg'] = 0.0050
+model.dfm_params['l2_reg_embedding'] = 0.001
+model.dfm_params['l2_reg_bias'] = 0.001
 model.dfm_params['learning_rate'] = 0.0010
-model.dfm_params['batch_size'] = 128
+model.dfm_params['use_deep'] = True
+model.dfm_params['batch_size'] = 32
 model.dfm_params['loss_type'] = 'mse'
 model.dfm_params['optimizer_type'] = 'sgd'
-
-indexes = (train_values == train_values.max()).values
-size = indexes.sum()
-train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
-train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
-train_values_ctr   = [1]*size + [0]*size
 
 model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
@@ -223,19 +207,19 @@ print("END on {}".format(file_name))
 
 # ---------- 
 
-model_name = 'deepfm_no_genre'
+model_name = 'dfm_rating'
 model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_prediction=False)
-model.dfm_params['l2_reg'] = 0.0010
+model.dfm_params['epoch'] = 5
+model.dfm_params['embedding_size'] = 4
+model.dfm_params['deep_layers'] = [16, 16]
+model.dfm_params['l2_reg'] = 0.0050
+model.dfm_params['l2_reg_embedding'] = 0.001
+model.dfm_params['l2_reg_bias'] = 0.001
 model.dfm_params['learning_rate'] = 0.0010
-model.dfm_params['batch_size'] = 128
+model.dfm_params['use_deep'] = True
+model.dfm_params['batch_size'] = 32
 model.dfm_params['loss_type'] = 'mse'
 model.dfm_params['optimizer_type'] = 'sgd'
-
-indexes = (train_values == train_values.max()).values
-size = indexes.sum()
-train_user_ids_ctr = list(train_user_ids[indexes]) + list(np.random.choice(list(set(train_user_ids)), size=size))
-train_item_ids_ctr = list(train_item_ids[indexes]) + list(np.random.choice(list(set(train_item_ids)), size=size))
-train_values_ctr   = [1]*size + [0]*size
 
 model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
