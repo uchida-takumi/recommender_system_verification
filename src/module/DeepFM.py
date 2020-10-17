@@ -112,6 +112,7 @@ class DeepFM:
         ratings = [3.,4.,5.]
         """
         global_mean_bias_init = np.float32(np.mean(ratings))
+        global_mean_bias_init = 0.01
         self.model = DeepFM_(**self.dfm_params, global_mean_bias_init=global_mean_bias_init, first_half_fit_only_fm=self.first_half_fit_only_fm)
         
         # もし、CTR予測の場合は、y=0のデータをランダム生成する。
@@ -440,13 +441,30 @@ if __name__ == 'how to use it.':
     feature_embeddings[-1]
     feature_bias[-1]
     
+    ##############################################    
     # --- IDとは無関係なランダムなバイアスで学習してみる ---
+    sample_size = 1000
+    n_user = 200
+    n_item = 50
+    ## id が後半になるほど学習セット中の出現率が低くなる。
+    p_user = 1/np.array(range(1, n_user+1)); p_user /= p_user.sum()
+    p_item = 1/np.array(range(1, n_item+1)); p_item /= p_item.sum()
+    users = np.random.choice(range(n_user), size=sample_size, p=p_user) 
+    items = np.random.choice(range(n_item), size=sample_size, p=p_item)  
     user_bias = {u:np.random.rand() for u in range(n_user)} 
     item_bias = {i:np.random.rand() for i in range(n_item)} 
-
+    user_embedding = {u:np.random.rand(5)-0.5 for u in range(n_user)}
+    item_embedding = {i:np.random.rand(5)-0.5 for i in range(n_item)}
     def rating(u, i):
-        return 10*sum(user_embedding[u] * item_embedding[i]) + user_bias[u] + item_bias[i]    
+        return sum(user_embedding[u] * item_embedding[i]) + user_bias[u] + item_bias[i]    
     ratings = [rating(u, i) for u,i in zip(users, items)]
+
+    ## user=500 と item=20 はそれぞれ新規IDとなる
+    test_users = np.random.choice(range(n_user), size=sample_size) 
+    test_items = np.random.choice(range(n_item), size=sample_size)  
+    test_ratings = [rating(u, i) for u,i in zip(users, items)]    
+    # ------------------------------
+    ##############################################    
 
     self = DeepFM(list(range(n_user+1)), list(range(n_item+1)))
     self.dfm_params['epoch'] = 100
@@ -672,6 +690,7 @@ if __name__ == 'how to use it.':
 
     pd.DataFrame(feature_embeddings).plot() 
     pd.DataFrame(feature_bias).plot() 
+    pd.DataFrame(self.predict([200]*50,list(range(50)))).plot() # 新規ユーザーだけ常に一定になる。
     
     self.predict([0,0,150,150],[0,10,0,10])
 
@@ -707,18 +726,42 @@ if __name__ == 'how to use it.':
     
     ########################
     # 上手く行かなかったので、テスト
-    self = DeepFM(list(range(n_user+1)), list(range(n_item+1)), first_half_fit_only_fm=True, ctr_prediction=True)
-    self.dfm_params['epoch'] = 5
+    self = DeepFM(list(range(n_user+1)), list(range(n_item+1)), first_half_fit_only_fm=False, ctr_prediction=False)
+    self.dfm_params['epoch'] = 10
     self.dfm_params['embedding_size'] = 4
     self.dfm_params['deep_layers'] = [16, 16]
-    self.dfm_params['l2_reg'] = 0.0050
-    self.dfm_params['l2_reg_embedding'] = 0.001
-    self.dfm_params['l2_reg_bias'] = 0.001
-    self.dfm_params['learning_rate'] = 0.0010
+    self.dfm_params['l2_reg'] = 0.04 #0.0040
+    self.dfm_params['l2_reg_embedding'] = 0.00000001 #0.001
+    self.dfm_params['l2_reg_bias'] = 0.001 #0.001
+    self.dfm_params['learning_rate'] = 0.0010 #0.001
     self.dfm_params['use_deep'] = True
-    self.dfm_params['batch_size'] = 32
+    self.dfm_params['batch_size'] = 64
     self.dfm_params['loss_type'] = 'mse'
-    self.dfm_params['optimizer_type'] = 'sgd'
+    #self.dfm_params['optimizer_type'] = 'sgd'
+    
+    self.fit(users, items, ratings)
+    
+    feature_embeddings = self.model.sess.run(self.model.weights["feature_embeddings"])
+    feature_bias = self.model.sess.run(self.model.weights["feature_bias"])
+    concat_bias = self.model.sess.run(self.model.weights["concat_bias"])
+
+    #pd.DataFrame(feature_embeddings).plot() 
+    #pd.DataFrame(feature_bias).plot() 
+    pd.DataFrame(self.predict([200]*50,list(range(50)))).plot() # 新規ユーザーだけ常に一定になる。
+
+    """ Best setting?    
+    self = DeepFM(list(range(n_user+1)), list(range(n_item+1)), first_half_fit_only_fm=False, ctr_prediction=False)
+    self.dfm_params['epoch'] = 10
+    self.dfm_params['embedding_size'] = 4
+    self.dfm_params['deep_layers'] = [16, 16]
+    self.dfm_params['l2_reg'] = 0.04 #0.0040
+    self.dfm_params['l2_reg_embedding'] = 0.00000001 #0.001
+    self.dfm_params['l2_reg_bias'] = 0.000000001 #0.001
+    self.dfm_params['learning_rate'] = 0.0010 #0.001
+    self.dfm_params['use_deep'] = True
+    self.dfm_params['batch_size'] = 64
+    self.dfm_params['loss_type'] = 'mse'
+    #self.dfm_params['optimizer_type'] = 'sgd'
     
     self.fit(users, items, ratings)
     
@@ -728,4 +771,5 @@ if __name__ == 'how to use it.':
 
     pd.DataFrame(feature_embeddings).plot() 
     pd.DataFrame(feature_bias).plot() 
-    
+    pd.DataFrame(self.predict([200]*50,list(range(50)))).plot() # 新規ユーザーだけ常に一定になる。
+    """

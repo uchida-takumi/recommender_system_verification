@@ -1,0 +1,10 @@
+sh src/run_sh/dfm0.sh &
+sh src/run_sh/dfm1.sh &
+sh src/run_sh/dfm2.sh &
+sh src/run_sh/dfm3.sh &
+sh src/run_sh/dfm4.sh &
+sh src/run_sh/dfm5.sh &
+sh src/run_sh/dfm6.sh &
+sh src/run_sh/dfm7.sh &
+sh src/run_sh/dfm8.sh &
+sh src/run_sh/dfm9.sh &

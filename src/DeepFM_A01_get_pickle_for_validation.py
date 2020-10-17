@@ -53,7 +53,6 @@ pass
  
 # DeepLearningRecをimportした時点で、kgat_data_set.pyが出力した学習セットを読み込んでいるので、そのまま学習が可能。
 from src.module.DeepFM import DeepFM
-import pandas as pd
 
 DIR_output = 'pickle2'
 DIR_DATA = 'src/module/knowledge_graph_attention_network/Data/ml'
@@ -77,7 +76,7 @@ dict_genre = pickle.load(open(os.path.join(DIR_DATA, 'genre.pickle'), 'rb'))
 # --- varidation ---
 n_random_selected_item_ids = 1000
 
-
+"""
 model_name = 'dfm_ctr_genre'
 model = DeepFM(set_train_test_users, set_train_test_items, dict_genre, ctr_prediction=True)
 model.dfm_params['l2_reg'] = 0.0010
@@ -173,7 +172,7 @@ pickle.dump(validation_arrays, open(file_name, 'wb'))
 
 print("END on {}".format(file_name))
 
-
+"""
 
 # ---------- ここからrating学習: 最終的には sgd + bias, embedding r2_regの追加が正解でした
 model_name = 'dfm_rating_genre'
@@ -181,14 +180,13 @@ model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=dict_genre
 model.dfm_params['epoch'] = 5
 model.dfm_params['embedding_size'] = 4
 model.dfm_params['deep_layers'] = [16, 16]
-model.dfm_params['l2_reg'] = 0.0050
-model.dfm_params['l2_reg_embedding'] = 0.001
-model.dfm_params['l2_reg_bias'] = 0.001
-model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['l2_reg'] = 0.0050 
+model.dfm_params['l2_reg_embedding'] = 0.000000001 
+model.dfm_params['l2_reg_bias'] = 0.000000001 
+model.dfm_params['learning_rate'] = 0.00010 
 model.dfm_params['use_deep'] = True
-model.dfm_params['batch_size'] = 32
+model.dfm_params['batch_size'] = 64
 model.dfm_params['loss_type'] = 'mse'
-model.dfm_params['optimizer_type'] = 'sgd'
 
 model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(
@@ -212,14 +210,13 @@ model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_
 model.dfm_params['epoch'] = 5
 model.dfm_params['embedding_size'] = 4
 model.dfm_params['deep_layers'] = [16, 16]
-model.dfm_params['l2_reg'] = 0.0050
-model.dfm_params['l2_reg_embedding'] = 0.001
-model.dfm_params['l2_reg_bias'] = 0.001
-model.dfm_params['learning_rate'] = 0.0010
+model.dfm_params['l2_reg'] = 0.0050 
+model.dfm_params['l2_reg_embedding'] = 0.000000001 
+model.dfm_params['l2_reg_bias'] = 0.000000001 
+model.dfm_params['learning_rate'] = 0.00010 
 model.dfm_params['use_deep'] = True
-model.dfm_params['batch_size'] = 32
+model.dfm_params['batch_size'] = 64
 model.dfm_params['loss_type'] = 'mse'
-model.dfm_params['optimizer_type'] = 'sgd'
 
 model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
 validation_arrays =  get_CF_varidation_arrays(

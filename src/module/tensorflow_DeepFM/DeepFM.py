@@ -229,10 +229,10 @@ class DeepFM(BaseEstimator, TransformerMixin):
 
         # embeddings
         weights["feature_embeddings"] = tf.Variable(
-            tf.random_normal([self.feature_size, self.embedding_size], 0.0, 0.01),
+            tf.random_normal([self.feature_size, self.embedding_size], 0.0, 0.001),
             name="feature_embeddings")  # feature_size * K
         weights["feature_bias"] = tf.Variable(
-            tf.random_uniform([self.feature_size, 1], 0.0, 0.1), name="feature_bias")  # feature_size * 1
+            tf.random_uniform([self.feature_size, 1], 0.0, 0.001), name="feature_bias")  # feature_size * 1
 
         # deep layers
         num_layer = len(self.deep_layers)
