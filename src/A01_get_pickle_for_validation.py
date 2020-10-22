@@ -109,12 +109,12 @@ models = {
         #"my_mf_010": MF(n_latent_factor=10),
         #"my_mf_050": MF(n_latent_factor=50),
         #"my_mf_100": MF(n_latent_factor=100),
-        "my_mf_200": MF(n_latent_factor=200),
+        #"my_mf_200": MF(n_latent_factor=200),
         #"my_contentbased": my_contentbased,
         #"my_contentboosted": my_contentboosted,
         #"RankingListMean": RankingListMean(),
-        #"RankingListTotal": RankingListTotal(),
-        "RankingListCnt": RankingListCnt(),
+        "RankingListTotal": RankingListTotal(),
+        "RankingListCnt": RankingListCnt()
         }
 
 # --- varidation ---

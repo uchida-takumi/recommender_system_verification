@@ -54,7 +54,7 @@ pass
 # DeepLearningRecをimportした時点で、kgat_data_set.pyが出力した学習セットを読み込んでいるので、そのまま学習が可能。
 from src.module.DeepFM import DeepFM
 
-DIR_output = 'pickle2'
+DIR_output = 'pickle3'
 DIR_DATA = 'src/module/knowledge_graph_attention_network/Data/ml'
 df_train = pd.read_csv(os.path.join(DIR_DATA, 'train_rating.csv'))
 df_test = pd.read_csv(os.path.join(DIR_DATA, 'test_rating.csv'))
@@ -172,7 +172,6 @@ pickle.dump(validation_arrays, open(file_name, 'wb'))
 
 print("END on {}".format(file_name))
 
-"""
 
 # ---------- ここからrating学習: 最終的には sgd + bias, embedding r2_regの追加が正解でした
 model_name = 'dfm_rating_genre'
@@ -232,9 +231,73 @@ file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}_
 pickle.dump(validation_arrays, open(file_name, 'wb'))
 
 print("END on {}".format(file_name))
+"""
+
+# ---------- ここからrating学習: 最終的には sgd + bias, embedding r2_regの追加が正解でした
+model_name = 'dfm_rating_genre_no_deep'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=dict_genre, ctr_prediction=False)
+model.dfm_params['epoch'] = 5
+model.dfm_params['embedding_size'] = 4
+model.dfm_params['deep_layers'] = [16, 16]
+model.dfm_params['l2_reg'] = 0.0050 
+model.dfm_params['l2_reg_embedding'] = 0.000000001 
+model.dfm_params['l2_reg_bias'] = 0.000000001 
+model.dfm_params['learning_rate'] = 0.00010 
+model.dfm_params['use_deep'] = False
+model.dfm_params['batch_size'] = 64
+model.dfm_params['loss_type'] = 'mse'
+
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            model,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+print("END on {}".format(file_name))
+
+# ---------- 
+
+model_name = 'dfm_rating_no_deep'
+model = DeepFM(set_train_test_users, set_train_test_items, dict_genre=None, ctr_prediction=False)
+model.dfm_params['epoch'] = 5
+model.dfm_params['embedding_size'] = 4
+model.dfm_params['deep_layers'] = [16, 16]
+model.dfm_params['l2_reg'] = 0.0050 
+model.dfm_params['l2_reg_embedding'] = 0.000000001 
+model.dfm_params['l2_reg_bias'] = 0.000000001 
+model.dfm_params['learning_rate'] = 0.00010 
+model.dfm_params['use_deep'] = False
+model.dfm_params['batch_size'] = 64
+model.dfm_params['loss_type'] = 'mse'
+
+model.fit(train_user_ids, train_item_ids, train_values, test_user_ids, test_item_ids, test_values)
+validation_arrays =  get_CF_varidation_arrays(
+            train_user_ids, train_item_ids, train_values,
+            test_user_ids, test_item_ids, test_values,
+            model,
+            n_random_selected_item_ids=n_random_selected_item_ids,
+            remove_still_interaction_from_test=True,
+            random_seed=random_seed,
+            topN=topN, need_fit=False
+        )
+file_name = os.path.join(DIR_output, 'validation__model_name={}__random_seed={}__train_test_days={}__topN={}__hold={}.pickle'.format(model_name, random_seed, train_test_days, topN, k_hold))
+pickle.dump(validation_arrays, open(file_name, 'wb'))
+
+print("END on {}".format(file_name))
+
+
+
 
 
 """
+
 #################
 # 学習結果の重み出力
 import collections
